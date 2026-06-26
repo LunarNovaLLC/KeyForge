@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.19
+
+- Remove "Now" from the manual update check button label.
+
 ## 0.1.18
 
 - Show a larger manual update check panel at the top of Settings.
