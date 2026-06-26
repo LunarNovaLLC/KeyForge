@@ -1,0 +1,117 @@
+<Window x:Class="KeyForge.App.RunningWindowPickerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Select Running Window"
+        Height="560"
+        Width="780"
+        MinHeight="420"
+        MinWidth="640"
+        Background="#0E1116"
+        Foreground="#F2F5F8"
+        WindowStartupLocation="CenterOwner">
+    <Window.Resources>
+        <SolidColorBrush x:Key="PanelBrush" Color="#171B22" />
+        <SolidColorBrush x:Key="TextMutedBrush" Color="#9AA7B5" />
+        <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="#111722" />
+        <SolidColorBrush x:Key="{x:Static SystemColors.WindowTextBrushKey}" Color="#F2F5F8" />
+        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#1C4F7A" />
+        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#FFFFFF" />
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#F2F5F8" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="#263040" />
+            <Setter Property="Foreground" Value="#F2F5F8" />
+            <Setter Property="BorderBrush" Value="#3A4657" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="14,8" />
+            <Setter Property="Margin" Value="8,0,0,0" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style TargetType="ListBox">
+            <Setter Property="Background" Value="#111722" />
+            <Setter Property="Foreground" Value="#F2F5F8" />
+            <Setter Property="BorderBrush" Value="#334054" />
+        </Style>
+        <Style TargetType="ListBoxItem">
+            <Setter Property="Foreground" Value="#F2F5F8" />
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#1C4F7A" />
+                    <Setter Property="Foreground" Value="#FFFFFF" />
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#202F42" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Margin="0,0,0,12">
+            <TextBlock Text="Choose a running game or app" FontSize="22" FontWeight="SemiBold" />
+            <TextBlock Text="KeyForge will save the selected executable to this profile. Enable title matching only when you need this exact window, not every window from the same app."
+                       Foreground="{StaticResource TextMutedBrush}"
+                       Margin="0,6,0,0" />
+        </StackPanel>
+
+        <ListBox x:Name="WindowsListBox"
+                 Grid.Row="1"
+                 SelectionChanged="WindowsListBox_SelectionChanged"
+                 MouseDoubleClick="WindowsListBox_MouseDoubleClick">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Border Padding="10" Background="Transparent">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="48" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Width="38" Height="38" CornerRadius="6" Background="#263040" BorderBrush="#3A4657" BorderThickness="1">
+                                <Image Source="{Binding Icon}" Stretch="Uniform" Margin="5" />
+                            </Border>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="{Binding WindowTitle}" FontWeight="SemiBold" FontSize="15" />
+                                <TextBlock Text="{Binding ProcessLine, Mode=OneWay}"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           FontSize="12" />
+                                <TextBlock Text="{Binding ExecutablePath}"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           FontSize="11" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <Grid Grid.Row="2" Margin="0,14,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <CheckBox x:Name="MatchWindowTitleCheckBox"
+                      Content="Match this window title too"
+                      VerticalAlignment="Center"
+                      Foreground="#F2F5F8" />
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Content="Cancel" Click="CancelButton_Click" />
+                <Button x:Name="UseWindowButton"
+                        Content="Use Selected Window"
+                        Click="UseWindowButton_Click"
+                        IsEnabled="False"
+                        Background="#1C4F7A"
+                        BorderBrush="#37A3FF" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

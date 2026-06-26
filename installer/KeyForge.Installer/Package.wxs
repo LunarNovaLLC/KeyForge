@@ -1,0 +1,42 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="KeyForge"
+           Manufacturer="KeyForge"
+           Version="$(var.ProductVersion)"
+           UpgradeCode="30F52679-E842-40E9-8F5E-6555F5685944"
+           Scope="perMachine">
+    <MajorUpgrade DowngradeErrorMessage="A newer version of KeyForge is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+    <Icon Id="KeyForgeIcon" SourceFile="..\..\Icon\KFIcon.ico" />
+    <Property Id="ARPPRODUCTICON" Value="KeyForgeIcon" />
+
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="INSTALLFOLDER" Name="KeyForge" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="KeyForge">
+        <Component Id="ApplicationShortcut" Guid="A3AB0B4B-80D9-4901-91B1-F79B8057D2D4">
+          <Shortcut Id="ApplicationStartMenuShortcut"
+                    Name="KeyForge"
+                    Target="[INSTALLFOLDER]KeyForge.App.exe"
+                    Icon="KeyForgeIcon"
+                    WorkingDirectory="INSTALLFOLDER" />
+          <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall" />
+          <RegistryValue Root="HKCU"
+                         Key="Software\KeyForge"
+                         Name="Installed"
+                         Type="integer"
+                         Value="1"
+                         KeyPath="yes" />
+        </Component>
+      </Directory>
+    </StandardDirectory>
+
+    <Feature Id="MainFeature" Title="KeyForge" Level="1">
+      <Files Include="!(bindpath.PublishDir)\**" Directory="INSTALLFOLDER">
+        <Exclude Files="**\*.pdb" />
+      </Files>
+      <ComponentRef Id="ApplicationShortcut" />
+    </Feature>
+  </Package>
+</Wix>

@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\KeyForge.Core\KeyForge.Core.csproj" />
+    <ProjectReference Include="..\KeyForge.Storage\KeyForge.Storage.csproj" />
+    <ProjectReference Include="..\KeyForge.Input\KeyForge.Input.csproj" />
+    <ProjectReference Include="..\KeyForge.Process\KeyForge.Process.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon>..\..\Icon\KFIcon.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="..\..\Icon\KFIcon.png" Link="Assets\KFIcon.png" />
+  </ItemGroup>
+
+</Project>

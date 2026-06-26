@@ -1,0 +1,15 @@
+<Project Sdk="WixToolset.Sdk/6.0.2">
+  <PropertyGroup>
+    <OutputName>KeyForge</OutputName>
+    <OutputType>Package</OutputType>
+    <Platform>x64</Platform>
+    <PublishDir Condition="'$(PublishDir)' == ''">$(MSBuildThisFileDirectory)..\..\artifacts\publish\KeyForge\</PublishDir>
+    <DefineConstants>ProductVersion=$(KeyForgeVersion)</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <BindPath Include="$(PublishDir)">
+      <BindName>PublishDir</BindName>
+    </BindPath>
+  </ItemGroup>
+</Project>

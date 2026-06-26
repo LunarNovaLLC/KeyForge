@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <KeyForgeVersion>0.1.16</KeyForgeVersion>
+    <KeyForgeFileVersion>0.1.16.0</KeyForgeFileVersion>
+    <Version>$(KeyForgeVersion)</Version>
+    <AssemblyVersion>$(KeyForgeFileVersion)</AssemblyVersion>
+    <FileVersion>$(KeyForgeFileVersion)</FileVersion>
+    <InformationalVersion>$(KeyForgeVersion)</InformationalVersion>
+    <ProductVersion>$(KeyForgeVersion)</ProductVersion>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,146 @@
+<Window x:Class="KeyForge.App.KeyEditorPopupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Configurator"
+        Width="420"
+        SizeToContent="Height"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Topmost="True"
+        Background="Transparent"
+        Foreground="{DynamicResource TextBrush}"
+        FontFamily="Segoe UI Variable, Segoe UI"
+        PreviewKeyDown="Window_PreviewKeyDown">
+    <Border CornerRadius="7"
+            Background="{DynamicResource PanelBrush}"
+            BorderBrush="{DynamicResource BorderBrush}"
+            BorderThickness="1"
+            Padding="10">
+        <StackPanel>
+            <Grid Margin="0,0,0,8" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="32" />
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="TitleText"
+                           Text="Configurator"
+                           FontWeight="Black"
+                           FontSize="14"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Advanced" FontSize="10" FontWeight="SemiBold" Margin="0,0,6,0" VerticalAlignment="Center" />
+                    <CheckBox x:Name="AdvancedCheckBox"
+                              VerticalAlignment="Center"
+                              Checked="AdvancedCheckBox_Changed"
+                              Unchecked="AdvancedCheckBox_Changed" />
+                </StackPanel>
+                <Button Grid.Column="2"
+                        Content="&#xE8BB;"
+                        Style="{StaticResource TitleBarButton}"
+                        Width="28"
+                        Height="28"
+                        HorizontalAlignment="Right"
+                        Click="CloseButton_Click"
+                        ToolTip="Close" />
+            </Grid>
+
+            <ComboBox x:Name="BindingModeComboBox"
+                      SelectionChanged="BindingModeComboBox_SelectionChanged"
+                      Margin="0,4,0,8" />
+
+            <TextBlock Text="Current Rebind" Style="{StaticResource MutedText}" Margin="0,2,0,4" />
+            <Button x:Name="BindingCaptureBox"
+                    Click="CaptureButton_Click"
+                    MinHeight="62"
+                    Margin="0,0,0,8"
+                    Padding="12"
+                    HorizontalContentAlignment="Stretch"
+                    ToolTip="Click, then press the key or combo you want this key to send.">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock x:Name="CurrentBindingText"
+                               Text="Default"
+                               FontSize="18"
+                               FontWeight="Black"
+                               TextAlignment="Center"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Row="1"
+                               Text="Click here, then press a key"
+                               Style="{StaticResource MutedText}"
+                               TextAlignment="Center"
+                               Margin="0,4,0,0" />
+                </Grid>
+            </Button>
+
+            <TextBlock x:Name="CaptureStatusText"
+                       Text="Ready"
+                       Foreground="{DynamicResource AccentBrush}"
+                       FontSize="11"
+                       FontWeight="SemiBold"
+                       Margin="0,8,0,0" />
+
+            <StackPanel x:Name="AdvancedPanel" Visibility="Collapsed" Margin="0,12,0,0">
+                <Separator Background="{DynamicResource BorderBrush}" Margin="0,0,0,10" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <CheckBox x:Name="BlockOriginalCheckBox"
+                              Content="Block original"
+                              Checked="AdvancedOption_Changed"
+                              Unchecked="AdvancedOption_Changed" />
+                    <CheckBox x:Name="RepeatWhileHeldCheckBox"
+                              Grid.Column="1"
+                              Content="Repeat macro"
+                              Checked="AdvancedOption_Changed"
+                              Unchecked="AdvancedOption_Changed" />
+                </Grid>
+
+                <TextBlock Text="Macro Steps" FontWeight="SemiBold" FontSize="13" Margin="0,10,0,4" />
+                <ListBox x:Name="MacroStepsListBox"
+                         Height="95"
+                         Background="#80101520"
+                         BorderBrush="{DynamicResource BorderBrush}"
+                         BorderThickness="1" />
+
+                <Grid Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.3*" />
+                        <ColumnDefinition Width="0.8*" />
+                    </Grid.ColumnDefinitions>
+                    <ComboBox x:Name="MacroActionComboBox" Grid.Column="0" Margin="0,4,5,8" />
+                    <ComboBox x:Name="MacroKeyComboBox" Grid.Column="1" Margin="5,4,5,8" DisplayMemberPath="Label" SelectedValuePath="Code" />
+                    <TextBox x:Name="MacroDelayTextBox" Grid.Column="2" Text="50" Margin="5,4,0,8" />
+                </Grid>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button x:Name="AddStepButton" Grid.Column="0" Content="Add" Click="AddStepButton_Click" Margin="0,4,5,0" />
+                    <Button x:Name="RemoveStepButton" Grid.Column="1" Content="Remove" Click="RemoveStepButton_Click" Margin="5,4,5,0" />
+                    <Button x:Name="TestMacroButton" Grid.Column="2" Content="Test" Click="TestMacroButton_Click" Margin="5,4,0,0" />
+                </Grid>
+            </StackPanel>
+
+            <TextBlock x:Name="WarningTextBlock"
+                       Foreground="{DynamicResource WarningBrush}"
+                       FontSize="11"
+                       Margin="0,10,0,0" />
+            <Button x:Name="ClearButton"
+                    Content="Clear Binding"
+                    Click="ClearButton_Click"
+                    Margin="0,10,0,0" />
+        </StackPanel>
+    </Border>
+</Window>

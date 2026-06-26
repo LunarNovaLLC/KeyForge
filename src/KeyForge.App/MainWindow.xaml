@@ -1,0 +1,516 @@
+<Window x:Class="KeyForge.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        Title="KeyForge"
+        Height="900"
+        Width="1440"
+        MinHeight="760"
+        MinWidth="1180"
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        Background="{DynamicResource AppBackgroundBrush}"
+        Foreground="{DynamicResource TextBrush}"
+        FontFamily="Segoe UI Variable, Segoe UI"
+        Icon="/Assets/KFIcon.png"
+        PreviewKeyDown="Window_PreviewKeyDown"
+        Closing="Window_Closing">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="44"
+                            CornerRadius="0"
+                            GlassFrameThickness="0"
+                            ResizeBorderThickness="6"
+                            UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="44" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Background="{DynamicResource RailBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,0,0,1"
+                MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" Grid.Column="0" Margin="14,0,0,0" VerticalAlignment="Center">
+                    <Image Source="/Assets/KFIcon.png" Width="24" Height="24" Margin="0,0,10,0" />
+                    <TextBlock Text="KeyForge" FontWeight="Black" FontSize="15" VerticalAlignment="Center" />
+                    <TextBlock x:Name="VersionText"
+                               Text="v0.0.0"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               FontSize="11"
+                               Margin="8,2,0,0"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button Content="&#xE921;" Style="{StaticResource TitleBarButton}" Click="MinimizeButton_Click" ToolTip="Minimize" />
+                    <Button Content="&#xE922;" Style="{StaticResource TitleBarButton}" Click="MaximizeButton_Click" ToolTip="Maximize" />
+                    <Button Content="&#xE8BB;" Style="{StaticResource TitleBarButton}" Click="CloseWindowButton_Click" ToolTip="Close" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="64" />
+                <ColumnDefinition Width="310" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="1"
+                    Grid.ColumnSpan="2"
+                    Background="{DynamicResource AppBackgroundBrush}" />
+            <Image x:Name="ProfileArtworkImage"
+                   Grid.Column="1"
+                   Grid.ColumnSpan="2"
+                   Stretch="UniformToFill"
+                   Opacity="0.78"
+                   IsHitTestVisible="False">
+                <Image.Effect>
+                    <BlurEffect Radius="2" />
+                </Image.Effect>
+            </Image>
+            <Border Grid.Column="1"
+                    Grid.ColumnSpan="2"
+                    IsHitTestVisible="False">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#9E05070C" Offset="0" />
+                        <GradientStop Color="#47111827" Offset="0.42" />
+                        <GradientStop Color="#A807080D" Offset="1" />
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
+
+            <Border Grid.Column="0" Background="{DynamicResource RailBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+                <DockPanel LastChildFill="True">
+                    <StackPanel DockPanel.Dock="Top" Margin="0,16,0,0">
+                        <Button Content="&#xE713;" Style="{StaticResource RailButton}" ToolTip="Settings and diagnostics" Click="SettingsRailButton_Click" />
+                        <Button Content="&#xE897;" Style="{StaticResource RailButton}" ToolTip="Help" Click="HelpRailButton_Click" />
+                    </StackPanel>
+                    <StackPanel DockPanel.Dock="Bottom" Margin="0,0,0,12">
+                        <Button x:Name="PauseButton"
+                                Content="&#xE769;"
+                                Style="{StaticResource RailButton}"
+                                Click="PauseButton_Click"
+                                ToolTip="Pause remapping" />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <Border Grid.Column="1" Background="#B5121825" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+                <DockPanel LastChildFill="True" Margin="14">
+                    <StackPanel DockPanel.Dock="Top">
+                        <TextBlock Text="Profiles" FontSize="24" FontWeight="Black" />
+                        <TextBlock Text="Click a profile to edit. Toggle profiles to include them in matching." Style="{StaticResource MutedText}" Margin="0,2,0,12" />
+
+                        <TextBox x:Name="ProfileSearchTextBox"
+                                 TextChanged="ProfileSearchTextBox_TextChanged"
+                                 ToolTip="Filter profiles" />
+
+                        <StackPanel Margin="0,0,0,12">
+                            <Button x:Name="NewProfileButton" Content="+ New Profile" Click="NewProfileButton_Click" Style="{StaticResource PrimaryButton}" ToolTip="New profile" />
+                            <Button x:Name="SelectRunningWindowButton" Content="Select Running Window" Click="SelectRunningWindowButton_Click" ToolTip="Select running window" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Button x:Name="SelectExeButton" Grid.Column="0" Content="Choose EXE" Click="SelectExeButton_Click" ToolTip="Select target executable" Margin="0,4,6,0" />
+                                <Button x:Name="ChooseArtworkButton" Grid.Column="1" Content="Upload Background" Click="ChooseArtworkButton_Click" ToolTip="Choose profile keyboard background image" Margin="6,4,0,0" />
+                            </Grid>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Button x:Name="ImportProfileButton" Grid.Column="0" Content="Import" Click="ImportProfileButton_Click" ToolTip="Import profile JSON" Margin="0,4,6,0" />
+                                <Button x:Name="ExportProfileButton" Grid.Column="1" Content="Export" Click="ExportProfileButton_Click" ToolTip="Export profile JSON" Margin="6,4,0,0" />
+                            </Grid>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+                        <Button x:Name="DeleteProfileButton" Content="Delete Profile" Click="DeleteProfileButton_Click" />
+                    </StackPanel>
+
+                    <ListBox x:Name="ProfileListBox"
+                             SelectionChanged="ProfileListBox_SelectionChanged">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                                <EventSetter Event="MouseLeftButtonUp" Handler="ProfileListBoxItem_MouseLeftButtonUp" />
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border CornerRadius="8"
+                                        Padding="10"
+                                        Background="{DynamicResource CardBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}"
+                                        BorderThickness="1"
+                                        MinHeight="84">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="56" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="52" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Width="46" Height="46" CornerRadius="7" Background="{DynamicResource PanelAltBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                                            <Image Source="{Binding IconPath}" Stretch="UniformToFill" />
+                                        </Border>
+                                        <StackPanel Grid.Column="1" Margin="10,0,8,0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding ProfileName}" FontWeight="SemiBold" FontSize="14" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding Target.Exe}" Foreground="{DynamicResource TextMutedBrush}" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding Mode}" Foreground="{DynamicResource AccentBrush}" FontSize="11" />
+                                        </StackPanel>
+                                        <CheckBox Grid.Column="2"
+                                                  HorizontalAlignment="Right"
+                                                  VerticalAlignment="Center"
+                                                  IsChecked="{Binding Enabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  Click="ProfileEnabledToggle_Click"
+                                                  ToolTip="Enable this profile" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <Grid Grid.Column="2">
+                <Canvas IsHitTestVisible="False" Opacity="0.22">
+                    <Polyline Points="80,120 240,48 420,110 610,42 860,92 1180,38" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1" />
+                    <Polyline Points="140,740 320,680 620,720 900,640 1220,700" Stroke="{DynamicResource AccentRedBrush}" StrokeThickness="1" />
+                </Canvas>
+
+                <Grid Margin="20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="360" />
+                        </Grid.ColumnDefinitions>
+
+                        <WrapPanel x:Name="CompactDiagnosticsPanel" Grid.Column="0" VerticalAlignment="Top">
+                            <Border Style="{StaticResource ChipBorder}">
+                                <StackPanel>
+                                    <TextBlock Text="ACTIVE STACK" Style="{StaticResource SectionLabel}" />
+                                    <TextBlock x:Name="ActiveProfileText" Text="None" FontWeight="SemiBold" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource ChipBorder}">
+                                <StackPanel>
+                                    <TextBlock Text="EDITING" Style="{StaticResource SectionLabel}" />
+                                    <TextBlock x:Name="TargetExeChipText" Text="No profile" />
+                                </StackPanel>
+                            </Border>
+                            <Border x:Name="MatchStateChip" Style="{StaticResource ChipBorder}">
+                                <StackPanel>
+                                    <TextBlock Text="MATCH" Style="{StaticResource SectionLabel}" />
+                                    <TextBlock x:Name="MatchStateText" Text="Waiting" />
+                                </StackPanel>
+                            </Border>
+                            <Border x:Name="HookStateChip" Style="{StaticResource ChipBorder}" Visibility="Collapsed">
+                                <StackPanel>
+                                    <TextBlock Text="CAPTURE" Style="{StaticResource SectionLabel}" />
+                                    <TextBlock x:Name="HookStateText" Text="Keyboard Capture: starting" />
+                                </StackPanel>
+                            </Border>
+                        </WrapPanel>
+
+                        <Border Grid.Column="1" Style="{StaticResource PanelCard}" Padding="14">
+                            <StackPanel>
+                                <TextBlock Text="Foreground Watch" FontSize="16" FontWeight="Black" />
+                                <Grid Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="110" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="EXE" Style="{StaticResource SectionLabel}" />
+                                    <TextBlock x:Name="ActiveExeText" Grid.Column="1" Text="No foreground app" TextTrimming="CharacterEllipsis" />
+                                </Grid>
+                                <TextBlock x:Name="ForegroundTitleText" Text="Window: none" Style="{StaticResource MutedText}" Margin="0,4,0,0" />
+                                <TextBlock x:Name="ActiveStackText" Text="Stack: none" Style="{StaticResource MutedText}" Margin="0,4,0,0" />
+                                <TextBlock x:Name="CaptureStateText" Text="Keyboard Capture: starting" Style="{StaticResource MutedText}" Margin="0,4,0,0" />
+                                <TextBlock x:Name="GlobalStatusText" Text="Loading..." Style="{StaticResource MutedText}" Margin="0,8,0,0" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <Grid Grid.Row="1" ClipToBounds="True" Margin="0,8,0,0">
+                        <Viewbox Stretch="Uniform"
+                                 StretchDirection="Both"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Center">
+                            <StackPanel x:Name="KeyboardHost" />
+                        </Viewbox>
+                    </Grid>
+                </Grid>
+            </Grid>
+
+            <Grid x:Name="SettingsOverlay"
+                  Grid.ColumnSpan="3"
+                  Visibility="Collapsed"
+                  Background="#B0000000">
+                <Border Width="1080"
+                        Height="690"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        CornerRadius="8"
+                        Background="{DynamicResource PanelBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1"
+                        Padding="0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="64" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <Border Grid.Row="0"
+                                Background="{DynamicResource RailBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="0,0,0,1"
+                                CornerRadius="8,8,0,0">
+                            <Grid Margin="20,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Settings / Diagnostics" FontSize="22" FontWeight="Black" />
+                                    <TextBlock Text="Interface, input, profile target, and runtime visibility." Style="{StaticResource MutedText}" />
+                                </StackPanel>
+                                <Button Grid.Column="1"
+                                        Content="Close"
+                                        Width="86"
+                                        VerticalAlignment="Center"
+                                        Click="CloseSettingsButton_Click" />
+                            </Grid>
+                        </Border>
+
+                        <Grid Grid.Row="1" Margin="20">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.05*" />
+                                <ColumnDefinition Width="1.05*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Margin="0,0,14,0">
+                                <Border Style="{StaticResource PanelCard}" Padding="14" Margin="0,0,0,14">
+                                    <StackPanel>
+                                        <TextBlock Text="Appearance" FontSize="17" FontWeight="Black" />
+                                        <TextBlock Text="Theme Preset" Style="{StaticResource MutedText}" Margin="0,12,0,0" />
+                                        <ComboBox x:Name="ThemeComboBox" />
+
+                                        <Grid Margin="0,2,0,0">
+                                            <TextBlock Text="Keyboard Size" Style="{StaticResource MutedText}" />
+                                            <TextBlock x:Name="KeyboardScaleText"
+                                                       Text="Keyboard Size: 88%"
+                                                       Style="{StaticResource MutedText}"
+                                                       HorizontalAlignment="Right" />
+                                        </Grid>
+                                        <Slider x:Name="KeyboardScaleSlider"
+                                                Minimum="0.72"
+                                                Maximum="1.08"
+                                                TickFrequency="0.02"
+                                                ValueChanged="KeyboardScaleSlider_ValueChanged" />
+
+                                        <TextBlock Text="Background Opacity" Style="{StaticResource MutedText}" />
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="82" />
+                                            </Grid.ColumnDefinitions>
+                                            <Slider x:Name="BackgroundOpacitySlider"
+                                                    Grid.Column="0"
+                                                    Minimum="0.15"
+                                                    Maximum="0.9"
+                                                    TickFrequency="0.01"
+                                                    ValueChanged="BackgroundSlider_ValueChanged" />
+                                            <TextBox x:Name="BackgroundOpacityTextBox"
+                                                     Grid.Column="1"
+                                                     Text="0.58"
+                                                     Margin="10,0,0,10" />
+                                        </Grid>
+
+                                        <TextBlock Text="Background Blur" Style="{StaticResource MutedText}" />
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="82" />
+                                            </Grid.ColumnDefinitions>
+                                            <Slider x:Name="BackgroundBlurSlider"
+                                                    Grid.Column="0"
+                                                    Minimum="0"
+                                                    Maximum="24"
+                                                    TickFrequency="1"
+                                                    ValueChanged="BackgroundSlider_ValueChanged" />
+                                            <TextBox x:Name="BackgroundBlurTextBox"
+                                                     Grid.Column="1"
+                                                     Text="8"
+                                                     Margin="10,0,0,10" />
+                                        </Grid>
+
+                                        <Button x:Name="SettingsChooseArtworkButton"
+                                                Content="Upload Selected Profile Background"
+                                                Style="{StaticResource PrimaryButton}"
+                                                Click="ChooseArtworkButton_Click"
+                                                ToolTip="Copy an image into the selected profile and use it behind the keyboard." />
+                                        <CheckBox x:Name="ShowDiagnosticsCheckBox" Content="Show compact diagnostics on main screen" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource PanelCard}" Padding="14">
+                                    <StackPanel>
+                                        <TextBlock Text="General" FontSize="17" FontWeight="Black" />
+                                        <CheckBox x:Name="StartWithWindowsCheck" Content="Start with Windows" />
+                                        <CheckBox x:Name="StartMinimizedCheck" Content="Start minimized" />
+                                        <CheckBox x:Name="NotificationsCheck" Content="Show active profile notification" />
+                                        <TextBlock Text="Emergency Hotkey" Style="{StaticResource MutedText}" Margin="0,8,0,0" />
+                                        <TextBox x:Name="EmergencyHotkeyTextBox" Text="Ctrl+Shift+F12" IsReadOnly="True" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Margin="0,0,14,0">
+                                <Border Style="{StaticResource PanelCard}" Padding="14" Margin="0,0,0,14">
+                                    <StackPanel>
+                                        <TextBlock Text="Input" FontSize="17" FontWeight="Black" />
+                                        <CheckBox x:Name="IgnoreInjectedCheck" Content="Ignore injected input" />
+                                        <CheckBox x:Name="BlockDefaultCheck" Content="Block original key by default" />
+                                        <TextBlock Text="Macro Minimum Delay (ms)" Style="{StaticResource MutedText}" Margin="0,8,0,0" />
+                                        <TextBox x:Name="MinDelayTextBox" Text="20" />
+                                        <TextBlock Text="Profile Switch Polling (ms)" Style="{StaticResource MutedText}" />
+                                        <TextBox x:Name="PollingIntervalTextBox" Text="250" />
+                                        <CheckBox x:Name="AntiCheatWarningCheck" Content="Warn about anti-cheat compatibility" />
+                                        <CheckBox x:Name="DisableOnlineMacrosCheck" Content="Disable macros in online game profiles" />
+                                        <Button x:Name="SaveSettingsButton"
+                                                Content="Save Settings"
+                                                Style="{StaticResource PrimaryButton}"
+                                                Click="SaveSettingsButton_Click"
+                                                Margin="0,12,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource PanelCard}" Padding="14">
+                                    <StackPanel>
+                                        <TextBlock Text="Profile Target" FontSize="17" FontWeight="Black" />
+                                        <TextBlock x:Name="DiagnosticsProfileText"
+                                                   Text="No profile selected"
+                                                   Style="{StaticResource MutedText}"
+                                                   Margin="0,10,0,0"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   TextWrapping="NoWrap" />
+                                        <TextBlock x:Name="DiagnosticsTargetText"
+                                                   Text="Target: none"
+                                                   Style="{StaticResource MutedText}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   TextWrapping="NoWrap" />
+                                        <TextBlock x:Name="DiagnosticsWindowText"
+                                                   Text="Window title match: none"
+                                                   Style="{StaticResource MutedText}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   TextWrapping="NoWrap" />
+                                        <TextBlock x:Name="DiagnosticsArtworkText"
+                                                   Text="Artwork: none"
+                                                   Style="{StaticResource MutedText}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   TextWrapping="NoWrap" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2">
+                                <Border Style="{StaticResource PanelCard}" Padding="14" Margin="0,0,0,14">
+                                    <StackPanel>
+                                        <TextBlock Text="Runtime Diagnostics" FontSize="17" FontWeight="Black" />
+                                        <TextBlock x:Name="DiagnosticsForegroundText"
+                                                   Text="Foreground: unknown"
+                                                   Style="{StaticResource MutedText}"
+                                                   Margin="0,10,0,0"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   TextWrapping="NoWrap" />
+                                        <TextBlock x:Name="DiagnosticsMatchText" Text="Match: unknown" Style="{StaticResource MutedText}" />
+                                        <TextBlock x:Name="DiagnosticsHookText"
+                                                   Text="Keyboard Capture: unknown"
+                                                   Style="{StaticResource MutedText}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   TextWrapping="NoWrap" />
+                                        <TextBlock Text="Profile Storage" Style="{StaticResource SectionLabel}" Margin="0,14,0,2" />
+                                        <TextBlock x:Name="DiagnosticsProfilePathText"
+                                                   Style="{StaticResource MutedText}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   TextWrapping="NoWrap" />
+                                        <TextBlock Text="Background Storage" Style="{StaticResource SectionLabel}" Margin="0,10,0,2" />
+                                        <TextBlock x:Name="DiagnosticsBackgroundPathText"
+                                                   Style="{StaticResource MutedText}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   TextWrapping="NoWrap" />
+                                        <TextBlock Text="Log File" Style="{StaticResource SectionLabel}" Margin="0,10,0,2" />
+                                        <TextBlock x:Name="DiagnosticsLogPathText"
+                                                   Style="{StaticResource MutedText}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   TextWrapping="NoWrap" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource PanelCard}" Padding="14">
+                                    <StackPanel>
+                                        <TextBlock Text="Recent Status" FontSize="17" FontWeight="Black" />
+                                        <ListBox x:Name="DiagnosticsLogListBox"
+                                                 Height="275"
+                                                 Margin="0,10,0,0"
+                                                 Padding="8"
+                                                 Background="#101520"
+                                                 BorderBrush="{DynamicResource BorderBrush}"
+                                                 BorderThickness="1" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <Grid Visibility="Collapsed">
+                <TextBox x:Name="ProfileNameTextBox" TextChanged="ProfileField_Changed" />
+                <TextBox x:Name="TargetExeTextBox" TextChanged="ProfileField_Changed" />
+                <TextBox x:Name="WindowTitleTextBox" TextChanged="ProfileField_Changed" />
+                <TextBlock x:Name="ArtworkPathText" />
+                <ComboBox x:Name="ModeComboBox" SelectionChanged="ProfileField_Changed" />
+                <CheckBox x:Name="ProfileEnabledCheckBox" Checked="ProfileField_Changed" Unchecked="ProfileField_Changed" />
+                <TextBlock x:Name="BindingsCountText" />
+                <TextBlock x:Name="SelectedKeyText" />
+                <TextBlock x:Name="CurrentBindingText" />
+                <ComboBox x:Name="BindingTypeComboBox" SelectionChanged="BindingTypeComboBox_SelectionChanged" />
+                <CheckBox x:Name="BlockOriginalCheckBox" />
+                <CheckBox x:Name="RepeatWhileHeldCheckBox" />
+                <Button x:Name="CaptureSimpleButton" Click="CaptureSimpleButton_Click" />
+                <Button x:Name="CaptureComboButton" Click="CaptureComboButton_Click" />
+                <ListBox x:Name="MacroStepsListBox" />
+                <ComboBox x:Name="MacroActionComboBox" />
+                <ComboBox x:Name="MacroKeyComboBox" DisplayMemberPath="Label" SelectedValuePath="Code" />
+                <TextBox x:Name="MacroDelayTextBox" />
+                <Button x:Name="AddStepButton" Click="AddStepButton_Click" />
+                <Button x:Name="RemoveStepButton" Click="RemoveStepButton_Click" />
+                <Button x:Name="TestMacroButton" Click="TestMacroButton_Click" />
+                <TextBlock x:Name="WarningTextBlock" />
+                <Button x:Name="SaveBindingButton" Click="SaveBindingButton_Click" />
+                <Button x:Name="ClearBindingButton" Click="ClearBindingButton_Click" />
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>
