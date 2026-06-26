@@ -19,29 +19,35 @@ dotnet test KeyForge.sln
 
 The tests cover profile validation, JSON round-tripping, active profile matching, macro sequencing, injected-input filtering, emergency disable, and simple remap suppression.
 
-## Package
+## Official Package
+
+```powershell
+.\scripts\publish-velopack.ps1 -SkipPreviousDownload
+```
+
+The official distribution path publishes a self-contained `win-x64` app and builds Velopack setup/update artifacts in `artifacts\velopack`. Public releases should be created from tags named `vX.Y.Z` where `X.Y.Z` matches `Directory.Build.props`.
+
+For a production release, push the matching tag to GitHub. The GitHub Actions workflow builds, tests, packages Velopack artifacts, and uploads them to the GitHub Release. Release builds are unsigned staging artifacts until the signing slot in `.github\workflows\release.yml` is enabled.
+
+## Automatic Updates
+
+Installed Velopack builds check the public GitHub Releases feed once per day by default. Users can also open Settings and click **Check for Updates** at any time. KeyForge asks before downloading an update and asks again before installing/restarting.
+
+The release repository URL is stamped into the app during CI. For local update-feed testing, set:
+
+```powershell
+$env:KEYFORGE_UPDATE_REPOSITORY_URL = "https://github.com/<owner>/<repo>"
+```
+
+## Legacy MSI
 
 ```powershell
 .\scripts\publish-installer.ps1
 ```
 
-The script publishes a self-contained `win-x64` app to `artifacts\publish\KeyForge` and builds the unsigned MSI from `installer\KeyForge.Installer`.
+The WiX MSI project is retained as a legacy/dev artifact only. Existing MSI testers should uninstall that build once, then install the official Velopack setup.
 
-## Update Installed App
-
-For day-to-day testing, use the update script instead of uninstalling first:
-
-```powershell
-.\scripts\update-installed.ps1
-```
-
-That command bumps the patch version, rebuilds the MSI, stops a running KeyForge instance, and runs the MSI as an in-place upgrade. To pick an exact version:
-
-```powershell
-.\scripts\update-installed.ps1 -Version 0.1.2
-```
-
-To only build the upgrade MSI without installing it:
+For local MSI testing only:
 
 ```powershell
 .\scripts\update-installed.ps1 -NoInstall

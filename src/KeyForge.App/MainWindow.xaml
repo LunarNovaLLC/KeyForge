@@ -381,6 +381,24 @@
                                         <CheckBox x:Name="NotificationsCheck" Content="Show active profile notification" />
                                         <TextBlock Text="Emergency Hotkey" Style="{StaticResource MutedText}" Margin="0,8,0,0" />
                                         <TextBox x:Name="EmergencyHotkeyTextBox" Text="Ctrl+Shift+F12" IsReadOnly="True" />
+                                        <TextBlock Text="Updates" FontSize="17" FontWeight="Black" Margin="0,12,0,0" />
+                                        <CheckBox x:Name="AutoUpdateCheckBox" Content="Check for updates daily" />
+                                        <Button x:Name="CheckUpdatesButton"
+                                                Content="Check for Updates"
+                                                Click="CheckUpdatesButton_Click" />
+                                        <Button x:Name="DownloadUpdateButton"
+                                                Content="Download Update"
+                                                Click="DownloadUpdateButton_Click"
+                                                Visibility="Collapsed" />
+                                        <Button x:Name="InstallUpdateButton"
+                                                Content="Install and Restart"
+                                                Style="{StaticResource PrimaryButton}"
+                                                Click="InstallUpdateButton_Click"
+                                                Visibility="Collapsed" />
+                                        <TextBlock x:Name="UpdateStatusText"
+                                                   Text="Updates: idle"
+                                                   Style="{StaticResource MutedText}"
+                                                   Margin="0,8,0,0" />
                                     </StackPanel>
                                 </Border>
                             </StackPanel>

@@ -243,7 +243,9 @@ public sealed class ProfileAndStorageTests
             BackgroundOpacity = 0.44,
             BackgroundBlur = 12,
             KeyboardScale = 0.82,
-            ShowCompactDiagnostics = false
+            ShowCompactDiagnostics = false,
+            AutoCheckForUpdates = false,
+            LastUpdateCheckUtc = DateTimeOffset.Parse("2026-06-26T18:00:00Z")
         };
 
         var json = JsonSerializer.Serialize(settings, JsonStorageOptions.Default);
@@ -255,5 +257,7 @@ public sealed class ProfileAndStorageTests
         Assert.Equal(12, roundTrip.BackgroundBlur);
         Assert.Equal(0.82, roundTrip.KeyboardScale);
         Assert.False(roundTrip.ShowCompactDiagnostics);
+        Assert.False(roundTrip.AutoCheckForUpdates);
+        Assert.Equal(settings.LastUpdateCheckUtc, roundTrip.LastUpdateCheckUtc);
     }
 }

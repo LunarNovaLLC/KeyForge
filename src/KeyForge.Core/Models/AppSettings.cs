@@ -34,6 +34,10 @@ public sealed class AppSettings
 
     public bool DisableMacrosInOnlineGameProfiles { get; set; }
 
+    public bool AutoCheckForUpdates { get; set; } = true;
+
+    public DateTimeOffset? LastUpdateCheckUtc { get; set; }
+
     public AppSettings Clone() => new()
     {
         StartWithWindows = StartWithWindows,
@@ -51,6 +55,8 @@ public sealed class AppSettings
         MacroMinimumDelayMs = MacroMinimumDelayMs,
         ProfileSwitchPollingIntervalMs = ProfileSwitchPollingIntervalMs,
         WarnWhenAntiCheatMayBeActive = WarnWhenAntiCheatMayBeActive,
-        DisableMacrosInOnlineGameProfiles = DisableMacrosInOnlineGameProfiles
+        DisableMacrosInOnlineGameProfiles = DisableMacrosInOnlineGameProfiles,
+        AutoCheckForUpdates = AutoCheckForUpdates,
+        LastUpdateCheckUtc = LastUpdateCheckUtc
     };
 }

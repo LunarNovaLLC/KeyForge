@@ -1,0 +1,116 @@
+name: CI And Release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - "v*.*.*"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    name: Build And Test
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore tools
+        run: dotnet tool restore
+
+      - name: Restore
+        run: dotnet restore KeyForge.sln
+
+      - name: Build
+        run: dotnet build KeyForge.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test KeyForge.sln --configuration Release --no-restore
+
+  release:
+    name: Package And Publish
+    runs-on: windows-latest
+    needs: verify
+    if: startsWith(github.ref, 'refs/tags/v')
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Validate tag version
+        shell: pwsh
+        run: |
+          [xml]$props = Get-Content -Raw -LiteralPath "Directory.Build.props"
+          $version = [string]$props.Project.PropertyGroup.KeyForgeVersion
+          $expectedTag = "v$version"
+          if ($env:GITHUB_REF_NAME -ne $expectedTag) {
+            throw "Tag '$env:GITHUB_REF_NAME' does not match Directory.Build.props version '$expectedTag'."
+          }
+          "KEYFORGE_VERSION=$version" >> $env:GITHUB_ENV
+
+      - name: Generate release notes
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "artifacts" | Out-Null
+          $notes = @(
+            "# KeyForge $env:KEYFORGE_VERSION",
+            "",
+            "Official KeyForge release $env:KEYFORGE_VERSION.",
+            "",
+            "This release is unsigned staging output. Enable the signing slot before broad public distribution."
+          )
+          Set-Content -LiteralPath "artifacts\release-notes.md" -Encoding UTF8 -Value $notes
+
+      - name: Package Velopack release
+        shell: pwsh
+        run: |
+          .\scripts\publish-velopack.ps1 `
+            -Configuration Release `
+            -RepositoryUrl "https://github.com/${{ github.repository }}" `
+            -ReleaseNotesPath "artifacts\release-notes.md"
+          # Signing slot, intentionally disabled for staging:
+          # Add -AzureTrustedSignFile, -SignTemplate, or -SignParams here when code signing is ready.
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: keyforge-velopack-${{ env.KEYFORGE_VERSION }}
+          path: artifacts/velopack/*
+
+      - name: Publish GitHub release
+        shell: pwsh
+        run: |
+          $assetPaths = Get-ChildItem -LiteralPath "artifacts\velopack" -File | ForEach-Object { $_.FullName }
+          if ($assetPaths.Count -eq 0) {
+            throw "No Velopack assets were produced."
+          }
+
+          if (gh release view $env:GITHUB_REF_NAME *> $null) {
+            gh release upload $env:GITHUB_REF_NAME @assetPaths --clobber
+          } else {
+            gh release create $env:GITHUB_REF_NAME @assetPaths `
+              --title "KeyForge $env:KEYFORGE_VERSION" `
+              --notes-file "artifacts\release-notes.md" `
+              --latest
+          }

@@ -15,10 +15,23 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>..\..\Icon\KFIcon.ico</ApplicationIcon>
+    <StartupObject>KeyForge.App.Program</StartupObject>
+    <KeyForgeReleaseRepositoryUrl Condition="'$(KeyForgeReleaseRepositoryUrl)' == ''">https://github.com/LunarNovaLLC/KeyForge</KeyForgeReleaseRepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
     <Resource Include="..\..\Icon\KFIcon.png" Link="Assets\KFIcon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Velopack" Version="1.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>KeyForgeReleaseRepositoryUrl</_Parameter1>
+      <_Parameter2>$(KeyForgeReleaseRepositoryUrl)</_Parameter2>
+    </AssemblyAttribute>
   </ItemGroup>
 
 </Project>

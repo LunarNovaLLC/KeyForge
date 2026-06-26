@@ -60,6 +60,7 @@ public partial class MainWindow : Window
     private SendInputSender? _inputSender;
     private MacroRunner? _macroRunner;
     private RemappingEngine? _remappingEngine;
+    private UpdateService? _updateService;
     private Forms.NotifyIcon? _notifyIcon;
     private string? _lastTrayMenuSignature;
     private KeyForgeProfile? _selectedProfile;
@@ -68,6 +69,7 @@ public partial class MainWindow : Window
     private CaptureMode _captureMode;
     private bool _isLoadingUi;
     private bool _reallyExit;
+    private bool _isUpdateBusy;
     private string? _lastForegroundSignature;
     private string? _lastActiveProfileId;
     private IReadOnlyList<KeyForgeProfile> _activeProfiles = [];
@@ -111,6 +113,7 @@ public partial class MainWindow : Window
         }
 
         ApplyThemePreset(_settings.ThemePreset);
+        _updateService = new UpdateService(_settings, _settingsRepository);
         ApplySettingsToUi();
 
         var profiles = await _profileRepository.LoadAllAsync();
@@ -130,6 +133,8 @@ public partial class MainWindow : Window
         ApplyKeyboardScale();
         UpdateProfileArtwork();
         RefreshDiagnosticsPanel();
+        SetUpdateStatus("Updates: ready.");
+        _ = CheckForUpdatesAtStartupAsync();
 
         if (_settings.StartMinimized || App.StartMinimizedRequested)
         {
@@ -769,6 +774,7 @@ public partial class MainWindow : Window
         _settings.StartWithWindows = StartWithWindowsCheck.IsChecked == true;
         _settings.StartMinimized = StartMinimizedCheck.IsChecked == true;
         _settings.ShowActiveProfileNotification = NotificationsCheck.IsChecked == true;
+        _settings.AutoCheckForUpdates = AutoUpdateCheckBox.IsChecked == true;
         _settings.ThemePreset = ThemeComboBox.SelectedItem as string ?? "Obsidian Gold Red";
         _settings.BackgroundOpacity = Math.Clamp(ParseDouble(BackgroundOpacityTextBox.Text, 0.78), 0.15, 0.9);
         _settings.BackgroundBlur = Math.Clamp(ParseDouble(BackgroundBlurTextBox.Text, 2), 0, 24);
@@ -789,6 +795,206 @@ public partial class MainWindow : Window
         CompactDiagnosticsPanel.Visibility = _settings.ShowCompactDiagnostics ? Visibility.Visible : Visibility.Collapsed;
         UpdateActiveWindowTimer();
         UpdateGlobalStatus("Settings saved.");
+    }
+
+    private async void CheckUpdatesButton_Click(object sender, RoutedEventArgs e)
+    {
+        await CheckForUpdatesAsync(manual: true);
+    }
+
+    private async void DownloadUpdateButton_Click(object sender, RoutedEventArgs e)
+    {
+        await DownloadPendingUpdateAsync(promptToInstall: true);
+    }
+
+    private void InstallUpdateButton_Click(object sender, RoutedEventArgs e)
+    {
+        InstallDownloadedUpdate(prompt: true);
+    }
+
+    private async Task CheckForUpdatesAtStartupAsync()
+    {
+        await Task.Delay(1500);
+        if (_updateService?.ShouldCheckAutomatically() == true)
+        {
+            await CheckForUpdatesAsync(manual: false);
+        }
+    }
+
+    private async Task CheckForUpdatesAsync(bool manual)
+    {
+        if (_updateService is null || _isUpdateBusy)
+        {
+            return;
+        }
+
+        SetUpdateBusy(true);
+        SetUpdateStatus("Updates: checking...");
+
+        try
+        {
+            var result = await _updateService.CheckForUpdatesAsync();
+            await HandleUpdateCheckResultAsync(result, manual);
+        }
+        finally
+        {
+            SetUpdateBusy(false);
+        }
+    }
+
+    private async Task HandleUpdateCheckResultAsync(UpdateCheckResult result, bool manual)
+    {
+        SetUpdateStatus($"Updates: {result.Message}");
+
+        switch (result.Status)
+        {
+            case UpdateCheckStatus.UpdateAvailable:
+                DownloadUpdateButton.Visibility = Visibility.Visible;
+                InstallUpdateButton.Visibility = Visibility.Collapsed;
+                if (ShouldPromptForUpdateAction(manual) &&
+                    WpfMessageBox.Show(
+                        this,
+                        $"{result.Message}\n\nDownload it now?",
+                        "KeyForge Update",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Information) == MessageBoxResult.Yes)
+                {
+                    await DownloadPendingUpdateAsync(promptToInstall: true);
+                }
+                break;
+
+            case UpdateCheckStatus.UpdateReady:
+                DownloadUpdateButton.Visibility = Visibility.Collapsed;
+                InstallUpdateButton.Visibility = Visibility.Visible;
+                if (ShouldPromptForUpdateAction(manual))
+                {
+                    InstallDownloadedUpdate(prompt: true);
+                }
+                break;
+
+            default:
+                DownloadUpdateButton.Visibility = Visibility.Collapsed;
+                InstallUpdateButton.Visibility = _updateService?.CanApplyDownloadedUpdate() == true
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+                break;
+        }
+    }
+
+    private async Task DownloadPendingUpdateAsync(bool promptToInstall)
+    {
+        if (_updateService?.PendingUpdate is null)
+        {
+            return;
+        }
+
+        SetUpdateBusy(true);
+        SetUpdateStatus("Updates: downloading 0%...");
+
+        try
+        {
+            var result = await _updateService.DownloadUpdateAsync(
+                _updateService.PendingUpdate,
+                progress => Dispatcher.BeginInvoke(() => SetUpdateStatus($"Updates: downloading {progress}%...")));
+
+            SetUpdateStatus($"Updates: {result.Message}");
+            DownloadUpdateButton.Visibility = Visibility.Collapsed;
+            InstallUpdateButton.Visibility = result.Status == UpdateCheckStatus.UpdateReady
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
+            if (result.Status == UpdateCheckStatus.UpdateReady && promptToInstall && ShouldPromptForUpdateAction(manual: true))
+            {
+                InstallDownloadedUpdate(prompt: true);
+            }
+        }
+        finally
+        {
+            SetUpdateBusy(false);
+        }
+    }
+
+    private void InstallDownloadedUpdate(bool prompt)
+    {
+        if (_updateService?.CanApplyDownloadedUpdate() != true)
+        {
+            SetUpdateStatus("Updates: no downloaded update is ready.");
+            return;
+        }
+
+        if (prompt &&
+            WpfMessageBox.Show(
+                this,
+                "Install the downloaded update and restart KeyForge now?",
+                "KeyForge Update",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question) != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        try
+        {
+            SetUpdateStatus("Updates: installing...");
+            PrepareForUpdateRestart();
+            _updateService.ApplyDownloadedUpdateAndRestart();
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Failed to apply downloaded update.", ex);
+            SetUpdateStatus("Updates: install failed. Try again later.");
+        }
+    }
+
+    private bool ShouldPromptForUpdateAction(bool manual)
+    {
+        if (manual)
+        {
+            return true;
+        }
+
+        if (IsVisible)
+        {
+            return true;
+        }
+
+        _notifyIcon?.ShowBalloonTip(
+            3000,
+            "KeyForge Update",
+            "An update is available. Open Settings to download it.",
+            Forms.ToolTipIcon.Info);
+        return false;
+    }
+
+    private void SetUpdateBusy(bool busy)
+    {
+        _isUpdateBusy = busy;
+        if (CheckUpdatesButton is null)
+        {
+            return;
+        }
+
+        CheckUpdatesButton.IsEnabled = !busy;
+        DownloadUpdateButton.IsEnabled = !busy;
+        InstallUpdateButton.IsEnabled = !busy;
+    }
+
+    private void SetUpdateStatus(string status)
+    {
+        if (UpdateStatusText is not null)
+        {
+            UpdateStatusText.Text = status;
+        }
+    }
+
+    private void PrepareForUpdateRestart()
+    {
+        _reallyExit = true;
+        _activeWindowTimer.Stop();
+        _notifyIcon?.Dispose();
+        _notifyIcon = null;
+        _remappingEngine?.Dispose();
+        _remappingEngine = null;
     }
 
     private void PauseButton_Click(object sender, RoutedEventArgs e)
@@ -1137,6 +1343,7 @@ public partial class MainWindow : Window
             StartWithWindowsCheck.IsChecked = _settings.StartWithWindows;
             StartMinimizedCheck.IsChecked = _settings.StartMinimized;
             NotificationsCheck.IsChecked = _settings.ShowActiveProfileNotification;
+            AutoUpdateCheckBox.IsChecked = _settings.AutoCheckForUpdates;
             ThemeComboBox.SelectedItem = _settings.Theme;
             ThemeComboBox.SelectedItem = string.IsNullOrWhiteSpace(_settings.ThemePreset)
                 ? "Obsidian Gold Red"
