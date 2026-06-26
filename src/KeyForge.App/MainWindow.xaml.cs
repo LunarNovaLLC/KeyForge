@@ -18,6 +18,7 @@ using KeyForge.Input;
 using KeyForge.Process;
 using KeyForge.Storage;
 using Microsoft.Win32;
+using Velopack;
 using Forms = System.Windows.Forms;
 using CoreKeyBinding = KeyForge.Core.Models.KeyBinding;
 using CoreThemeMode = KeyForge.Core.Models.ThemeMode;
@@ -70,6 +71,8 @@ public partial class MainWindow : Window
     private bool _isLoadingUi;
     private bool _reallyExit;
     private bool _isUpdateBusy;
+    private string? _availableUpdateVersion;
+    private string? _availableUpdateNotes;
     private string? _lastForegroundSignature;
     private string? _lastActiveProfileId;
     private IReadOnlyList<KeyForgeProfile> _activeProfiles = [];
@@ -807,6 +810,14 @@ public partial class MainWindow : Window
         await DownloadPendingUpdateAsync(promptToInstall: true);
     }
 
+    private async void PatchNotesButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (ShowPatchNotesWindow())
+        {
+            await DownloadPendingUpdateAsync(promptToInstall: true);
+        }
+    }
+
     private void InstallUpdateButton_Click(object sender, RoutedEventArgs e)
     {
         InstallDownloadedUpdate(prompt: true);
@@ -849,15 +860,12 @@ public partial class MainWindow : Window
         switch (result.Status)
         {
             case UpdateCheckStatus.UpdateAvailable:
+                _availableUpdateVersion = result.Version;
+                _availableUpdateNotes = GetReleaseNotes(result.Update);
                 DownloadUpdateButton.Visibility = Visibility.Visible;
+                PatchNotesButton.Visibility = Visibility.Visible;
                 InstallUpdateButton.Visibility = Visibility.Collapsed;
-                if (ShouldPromptForUpdateAction(manual) &&
-                    WpfMessageBox.Show(
-                        this,
-                        $"{result.Message}\n\nDownload it now?",
-                        "KeyForge Update",
-                        MessageBoxButton.YesNo,
-                        MessageBoxImage.Information) == MessageBoxResult.Yes)
+                if (ShouldPromptForUpdateAction(manual) && ShowPatchNotesWindow())
                 {
                     await DownloadPendingUpdateAsync(promptToInstall: true);
                 }
@@ -865,6 +873,9 @@ public partial class MainWindow : Window
 
             case UpdateCheckStatus.UpdateReady:
                 DownloadUpdateButton.Visibility = Visibility.Collapsed;
+                PatchNotesButton.Visibility = string.IsNullOrWhiteSpace(_availableUpdateNotes)
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
                 InstallUpdateButton.Visibility = Visibility.Visible;
                 if (ShouldPromptForUpdateAction(manual))
                 {
@@ -873,7 +884,10 @@ public partial class MainWindow : Window
                 break;
 
             default:
+                _availableUpdateVersion = null;
+                _availableUpdateNotes = null;
                 DownloadUpdateButton.Visibility = Visibility.Collapsed;
+                PatchNotesButton.Visibility = Visibility.Collapsed;
                 InstallUpdateButton.Visibility = _updateService?.CanApplyDownloadedUpdate() == true
                     ? Visibility.Visible
                     : Visibility.Collapsed;
@@ -899,6 +913,9 @@ public partial class MainWindow : Window
 
             SetUpdateStatus($"Updates: {result.Message}");
             DownloadUpdateButton.Visibility = Visibility.Collapsed;
+            PatchNotesButton.Visibility = string.IsNullOrWhiteSpace(_availableUpdateNotes)
+                ? Visibility.Collapsed
+                : Visibility.Visible;
             InstallUpdateButton.Visibility = result.Status == UpdateCheckStatus.UpdateReady
                 ? Visibility.Visible
                 : Visibility.Collapsed;
@@ -976,6 +993,7 @@ public partial class MainWindow : Window
 
         CheckUpdatesButton.IsEnabled = !busy;
         DownloadUpdateButton.IsEnabled = !busy;
+        PatchNotesButton.IsEnabled = !busy;
         InstallUpdateButton.IsEnabled = !busy;
     }
 
@@ -995,6 +1013,36 @@ public partial class MainWindow : Window
         _notifyIcon = null;
         _remappingEngine?.Dispose();
         _remappingEngine = null;
+    }
+
+    private bool ShowPatchNotesWindow()
+    {
+        if (string.IsNullOrWhiteSpace(_availableUpdateVersion))
+        {
+            SetUpdateStatus("Updates: no patch notes are available yet.");
+            return false;
+        }
+
+        var window = new PatchNotesWindow(_availableUpdateVersion, _availableUpdateNotes ?? string.Empty)
+        {
+            Owner = this
+        };
+
+        return window.ShowDialog() == true && window.DownloadRequested;
+    }
+
+    private static string GetReleaseNotes(UpdateInfo? update)
+    {
+        var notes = update?.TargetFullRelease.NotesMarkdown;
+        if (!string.IsNullOrWhiteSpace(notes))
+        {
+            return notes;
+        }
+
+        notes = update?.TargetFullRelease.NotesHTML;
+        return string.IsNullOrWhiteSpace(notes)
+            ? "No patch notes were included with this build."
+            : notes;
     }
 
     private void PauseButton_Click(object sender, RoutedEventArgs e)
@@ -2042,6 +2090,12 @@ public partial class MainWindow : Window
         var version = typeof(MainWindow).Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
             .InformationalVersion;
+
+        if (!string.IsNullOrWhiteSpace(version))
+        {
+            var metadataIndex = version.IndexOf('+', StringComparison.Ordinal);
+            return metadataIndex >= 0 ? version[..metadataIndex] : version;
+        }
 
         return string.IsNullOrWhiteSpace(version)
             ? typeof(MainWindow).Assembly.GetName().Version?.ToString(3) ?? "0.0.0"

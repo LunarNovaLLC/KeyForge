@@ -73,10 +73,40 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path "artifacts" | Out-Null
-          $notes = @(
-            "# KeyForge $env:KEYFORGE_VERSION",
-            "",
-            "Official KeyForge release $env:KEYFORGE_VERSION.",
+          $notes = $null
+          if (Test-Path "CHANGELOG.md") {
+            $lines = Get-Content -LiteralPath "CHANGELOG.md"
+            $start = -1
+            for ($i = 0; $i -lt $lines.Count; $i++) {
+              if ($lines[$i] -match "^##\s+\[?v?$([regex]::Escape($env:KEYFORGE_VERSION))\]?(\s|$)") {
+                $start = $i
+                break
+              }
+            }
+
+            if ($start -ge 0) {
+              $end = $lines.Count
+              for ($i = $start + 1; $i -lt $lines.Count; $i++) {
+                if ($lines[$i] -match "^##\s+") {
+                  $end = $i
+                  break
+                }
+              }
+
+              $notes = @($lines[$start..($end - 1)])
+              $notes[0] = "# KeyForge $env:KEYFORGE_VERSION"
+            }
+          }
+
+          if ($null -eq $notes) {
+            $notes = @(
+              "# KeyForge $env:KEYFORGE_VERSION",
+              "",
+              "Official KeyForge release $env:KEYFORGE_VERSION."
+            )
+          }
+
+          $notes += @(
             "",
             "This release is unsigned staging output. Enable the signing slot before broad public distribution."
           )
