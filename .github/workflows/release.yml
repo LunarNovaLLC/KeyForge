@@ -114,7 +114,8 @@ jobs:
           .\scripts\publish-velopack.ps1 `
             -Configuration Release `
             -RepositoryUrl "https://github.com/${{ github.repository }}" `
-            -ReleaseNotesPath "artifacts\release-notes.md"
+            -ReleaseNotesPath "artifacts\release-notes.md" `
+            -SkipPreviousDownload
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.21
+
+- Keep release feed metadata limited to the current build notes.
+
 ## 0.1.20
 
 - Remove signing/staging language from release notes.
