@@ -27,7 +27,7 @@ The tests cover profile validation, JSON round-tripping, active profile matching
 
 The official distribution path publishes a self-contained `win-x64` app and builds Velopack setup/update artifacts in `artifacts\velopack`. Public releases should be created from tags named `vX.Y.Z` where `X.Y.Z` matches `Directory.Build.props`.
 
-For a production release, push the matching tag to GitHub. The GitHub Actions workflow builds, tests, packages Velopack artifacts, and uploads them to the GitHub Release. Release builds are unsigned staging artifacts until the signing slot in `.github\workflows\release.yml` is enabled.
+For a production release, push the matching tag to GitHub. The GitHub Actions workflow builds, tests, packages Velopack artifacts, and uploads them to the GitHub Release.
 
 ## Automatic Updates
 

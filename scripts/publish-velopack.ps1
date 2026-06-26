@@ -142,12 +142,6 @@ if (-not [string]::IsNullOrWhiteSpace($AzureTrustedSignFile)) {
     $packArgs += @("--azureTrustedSignFile", $AzureTrustedSignFile)
 }
 
-if ([string]::IsNullOrWhiteSpace($SignTemplate) -and
-    [string]::IsNullOrWhiteSpace($SignParams) -and
-    [string]::IsNullOrWhiteSpace($AzureTrustedSignFile)) {
-    Write-Warning "Packaging unsigned staging artifacts. Enable signing before broad public distribution."
-}
-
 & dotnet @packArgs
 if ($LASTEXITCODE -ne 0) {
     throw "Velopack packaging failed with exit code $LASTEXITCODE"

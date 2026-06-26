@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.20
+
+- Remove signing/staging language from release notes.
+
 ## 0.1.19
 
 - Remove "Now" from the manual update check button label.

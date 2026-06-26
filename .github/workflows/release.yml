@@ -106,10 +106,6 @@ jobs:
             )
           }
 
-          $notes += @(
-            "",
-            "This release is unsigned staging output. Enable the signing slot before broad public distribution."
-          )
           Set-Content -LiteralPath "artifacts\release-notes.md" -Encoding UTF8 -Value $notes
 
       - name: Package Velopack release
@@ -119,8 +115,6 @@ jobs:
             -Configuration Release `
             -RepositoryUrl "https://github.com/${{ github.repository }}" `
             -ReleaseNotesPath "artifacts\release-notes.md"
-          # Signing slot, intentionally disabled for staging:
-          # Add -AzureTrustedSignFile, -SignTemplate, or -SignParams here when code signing is ready.
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
