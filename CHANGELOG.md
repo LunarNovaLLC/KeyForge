@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.25
+
+- Rework Settings into a cleaner three-column card layout and remove the keyboard size setting.
+- Improve the rebind popup with selected-key context and key-anchored positioning.
+- Redesign macro step editing with clean key labels, per-step timing, and drag-and-drop reordering.
+
 ## 0.1.24
 
 - Rework Settings into a compact fixed layout with live keyboard visual controls moved into the keyboard gear panel.

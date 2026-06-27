@@ -141,6 +141,11 @@ public sealed class ProfileValidator
             return;
         }
 
+        if (step.DelayMs is > 0)
+        {
+            ValidateDelay(step.DelayMs.Value, result, "Step delays");
+        }
+
         if (string.IsNullOrWhiteSpace(step.Key))
         {
             result.Add(ValidationSeverity.Error, "Keyboard macro steps require a key.", "bindings.output.key");
@@ -151,6 +156,23 @@ public sealed class ProfileValidator
         if (!KeyCatalog.IsKnown(step.Key))
         {
             result.Add(ValidationSeverity.Error, $"Unknown output key: {step.Key}.", "bindings.output.key");
+        }
+    }
+
+    private void ValidateDelay(int delay, ValidationResult result, string label)
+    {
+        if (delay < _settings.MacroMinimumDelayMs)
+        {
+            result.Add(ValidationSeverity.Error,
+                $"{label} must be at least {_settings.MacroMinimumDelayMs}ms.",
+                "bindings.output.delayMs");
+        }
+
+        if (delay > MaxMacroDelayMs)
+        {
+            result.Add(ValidationSeverity.Error,
+                $"{label} cannot exceed {MaxMacroDelayMs}ms.",
+                "bindings.output.delayMs");
         }
     }
 }

@@ -45,12 +45,20 @@ public static class BindingFormatter
 
     public static string FormatStep(MacroStep step)
     {
-        return step.Action switch
+        var formatted = step.Action switch
         {
             MacroStepAction.Wait => $"wait {step.DelayMs ?? 0}ms",
             MacroStepAction.KeyDown => $"{KeyCatalog.LabelFor(step.Key)} down",
             MacroStepAction.KeyUp => $"{KeyCatalog.LabelFor(step.Key)} up",
             _ => KeyCatalog.LabelFor(step.Key)
         };
+
+        if (step.Action != MacroStepAction.Wait && step.DelayMs is > 0)
+        {
+            var placement = step.DelayPlacement == MacroStepDelayPlacement.Before ? "before" : "after";
+            formatted = $"{formatted} ({placement} {step.DelayMs}ms)";
+        }
+
+        return formatted;
     }
 }

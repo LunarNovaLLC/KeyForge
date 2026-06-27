@@ -8,6 +8,8 @@ public sealed class MacroStep
 
     public int? DelayMs { get; set; }
 
+    public MacroStepDelayPlacement DelayPlacement { get; set; } = MacroStepDelayPlacement.After;
+
     public static MacroStep Press(string key) => new()
     {
         Action = MacroStepAction.Press,
@@ -36,17 +38,22 @@ public sealed class MacroStep
     {
         Action = Action,
         Key = Key,
-        DelayMs = DelayMs
+        DelayMs = DelayMs,
+        DelayPlacement = DelayPlacement
     };
 
     public override string ToString()
     {
+        var timing = Action == MacroStepAction.Wait || DelayMs is not > 0
+            ? string.Empty
+            : $" ({DelayPlacement.ToString().ToLowerInvariant()} {DelayMs}ms)";
+
         return Action switch
         {
             MacroStepAction.Wait => $"Wait {DelayMs ?? 0}ms",
-            MacroStepAction.KeyDown => $"Key Down: {Key ?? "?"}",
-            MacroStepAction.KeyUp => $"Key Up: {Key ?? "?"}",
-            _ => $"Press: {Key ?? "?"}"
+            MacroStepAction.KeyDown => $"Key Down: {Key ?? "?"}{timing}",
+            MacroStepAction.KeyUp => $"Key Up: {Key ?? "?"}{timing}",
+            _ => $"Press: {Key ?? "?"}{timing}"
         };
     }
 }

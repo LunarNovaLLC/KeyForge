@@ -65,6 +65,7 @@ public partial class MainWindow : Window
     private string? _lastTrayMenuSignature;
     private KeyForgeProfile? _selectedProfile;
     private CoreKeyBinding? _editingBinding;
+    private WpfButton? _keyEditorAnchorButton;
     private string? _selectedKey;
     private CaptureMode _captureMode;
     private bool _isLoadingUi;
@@ -136,7 +137,6 @@ public partial class MainWindow : Window
         UpdateActiveWindowTimer();
         _activeWindowTimer.Start();
         UpdateGlobalStatus("Running. Ctrl+Shift+F12 disables all remapping.");
-        ApplyKeyboardScale();
         UpdateProfileArtwork();
         RefreshDiagnosticsPanel();
         SetUpdateStatus("Updates: ready.");
@@ -185,11 +185,10 @@ public partial class MainWindow : Window
     {
         KeyboardHost.Children.Clear();
         _keyboardButtons.Clear();
-        var scale = Math.Clamp(_settings.KeyboardScale, 0.72, 1.08);
-        var keyWidth = 48 * scale;
-        var keyHeight = 42 * scale;
-        var gap = 5 * scale;
-        var rowGap = 7 * scale;
+        const double keyWidth = 48;
+        const double keyHeight = 42;
+        const double gap = 5;
+        const double rowGap = 7;
         var xStep = keyWidth + gap;
         var yStep = keyHeight + rowGap;
         var canvas = new Canvas
@@ -782,9 +781,8 @@ public partial class MainWindow : Window
         _settings.CreateDesktopShortcut = DesktopShortcutCheck.IsChecked == true;
         _settings.AutoCheckForUpdates = AutoUpdateCheckBox.IsChecked == true;
         _settings.ThemePreset = NormalizeThemePresetName(ThemeComboBox.SelectedItem as string);
-        _settings.BackgroundOpacity = Math.Clamp(ParseDouble(BackgroundOpacityTextBox.Text, 0.78), 0.15, 0.9);
+        _settings.BackgroundOpacity = Math.Clamp(ParseDouble(BackgroundOpacityTextBox.Text, 0.78), 0.15, 1.0);
         _settings.BackgroundBlur = Math.Clamp(ParseDouble(BackgroundBlurTextBox.Text, 2), 0, 24);
-        _settings.KeyboardScale = Math.Clamp(KeyboardScaleSlider.Value, 0.72, 1.08);
         _settings.ShowCompactDiagnostics = ShowDiagnosticsCheckBox.IsChecked == true;
         _settings.IgnoreInjectedInput = IgnoreInjectedCheck.IsChecked == true;
         _settings.BlockOriginalKeyByDefault = BlockDefaultCheck.IsChecked == true;
@@ -796,7 +794,6 @@ public partial class MainWindow : Window
         WindowsStartupService.Apply(_settings.StartWithWindows);
         DesktopShortcutService.Apply(_settings.CreateDesktopShortcut);
         ApplyThemePreset(_settings.ThemePreset);
-        ApplyKeyboardScale();
         UpdateProfileArtwork();
         CompactDiagnosticsPanel.Visibility = _settings.ShowCompactDiagnostics ? Visibility.Visible : Visibility.Collapsed;
         UpdateActiveWindowTimer();
@@ -1337,7 +1334,7 @@ public partial class MainWindow : Window
                 Text = label,
                 TextAlignment = TextAlignment.Center,
                 TextWrapping = TextWrapping.Wrap,
-                FontSize = (binding is null ? 13 : 11) * Math.Clamp(_settings.KeyboardScale, 0.72, 1.08),
+                FontSize = binding is null ? 13 : 11,
                 Foreground = WpfBrushes.White
             };
 
@@ -1411,10 +1408,8 @@ public partial class MainWindow : Window
             UpdateCustomThemeEditorVisibility();
             BackgroundOpacityTextBox.Text = _settings.BackgroundOpacity.ToString("0.##");
             BackgroundBlurTextBox.Text = _settings.BackgroundBlur.ToString("0.##");
-            BackgroundOpacitySlider.Value = Math.Clamp(_settings.BackgroundOpacity, 0.15, 0.9);
+            BackgroundOpacitySlider.Value = Math.Clamp(_settings.BackgroundOpacity, 0.15, 1.0);
             BackgroundBlurSlider.Value = Math.Clamp(_settings.BackgroundBlur, 0, 24);
-            KeyboardScaleSlider.Value = Math.Clamp(_settings.KeyboardScale, 0.72, 1.08);
-            KeyboardScaleText.Text = $"{Math.Round(_settings.KeyboardScale * 100)}%";
             ShowDiagnosticsCheckBox.IsChecked = _settings.ShowCompactDiagnostics;
             CompactDiagnosticsPanel.Visibility = _settings.ShowCompactDiagnostics ? Visibility.Visible : Visibility.Collapsed;
             EmergencyHotkeyTextBox.Text = _settings.EmergencyDisableHotkey;
@@ -1612,17 +1607,35 @@ public partial class MainWindow : Window
                 Owner = this
             };
             _keyEditorWindow.ProfileChanged += KeyEditorWindow_ProfileChanged;
-            _keyEditorWindow.Closed += (_, _) => _keyEditorWindow = null;
+            _keyEditorWindow.LayoutSizeChanged += KeyEditorWindow_LayoutSizeChanged;
+            _keyEditorWindow.Closed += (_, _) =>
+            {
+                _keyEditorWindow = null;
+                _keyEditorAnchorButton = null;
+            };
         }
 
+        _keyEditorAnchorButton = keyButton;
         _keyEditorWindow.Load(profile, key);
-        PositionKeyEditorWindow(_keyEditorWindow, keyButton);
         if (!_keyEditorWindow.IsVisible)
         {
             _keyEditorWindow.Show();
         }
 
+        _keyEditorWindow.UpdateLayout();
+        PositionKeyEditorWindow(_keyEditorWindow, keyButton);
         _keyEditorWindow.Activate();
+    }
+
+    private void KeyEditorWindow_LayoutSizeChanged(object? sender, EventArgs e)
+    {
+        if (_keyEditorWindow is null || !_keyEditorWindow.IsVisible)
+        {
+            return;
+        }
+
+        _keyEditorWindow.UpdateLayout();
+        PositionKeyEditorWindow(_keyEditorWindow, _keyEditorAnchorButton);
     }
 
     private void PositionKeyEditorWindow(Window editor, WpfButton? keyButton)
@@ -1634,23 +1647,25 @@ public partial class MainWindow : Window
             return;
         }
 
-        var screenPoint = keyButton.PointToScreen(new System.Windows.Point(keyButton.ActualWidth + 12, -6));
-        var left = screenPoint.X;
-        var top = screenPoint.Y;
-        var workingArea = SystemParameters.WorkArea;
+        const double margin = 12;
+        const double gap = 10;
+        var keyTopLeft = keyButton.PointToScreen(new System.Windows.Point(0, 0));
+        var keyBottomRight = keyButton.PointToScreen(new System.Windows.Point(keyButton.ActualWidth, keyButton.ActualHeight));
+        var keyCenterX = (keyTopLeft.X + keyBottomRight.X) / 2;
+        var keyCenterY = (keyTopLeft.Y + keyBottomRight.Y) / 2;
+        var editorWidth = editor.ActualWidth > 0 ? editor.ActualWidth : editor.Width;
+        var editorHeight = editor.ActualHeight > 0 ? editor.ActualHeight : editor.Height;
+        var screen = Forms.Screen.FromPoint(new System.Drawing.Point((int)keyCenterX, (int)keyCenterY)).WorkingArea;
 
-        if (left + editor.Width > workingArea.Right - 12)
-        {
-            left = keyButton.PointToScreen(new System.Windows.Point(-editor.Width - 12, -6)).X;
-        }
+        var left = keyCenterX - editorWidth / 2;
+        var aboveTop = keyTopLeft.Y - editorHeight - gap;
+        var belowTop = keyBottomRight.Y + gap;
+        var top = aboveTop >= screen.Top + margin
+            ? aboveTop
+            : belowTop;
 
-        if (top + 360 > workingArea.Bottom - 12)
-        {
-            top = Math.Max(workingArea.Top + 12, workingArea.Bottom - 372);
-        }
-
-        editor.Left = Math.Max(workingArea.Left + 12, left);
-        editor.Top = Math.Max(workingArea.Top + 12, top);
+        editor.Left = Math.Clamp(left, screen.Left + margin, screen.Right - editorWidth - margin);
+        editor.Top = Math.Clamp(top, screen.Top + margin, screen.Bottom - editorHeight - margin);
     }
 
     private void KeyEditorWindow_ProfileChanged(object? sender, KeyForgeProfile profile)
@@ -1665,19 +1680,6 @@ public partial class MainWindow : Window
         UpdateTrayMenu();
     }
 
-    private async void KeyboardScaleSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-    {
-        if (_isLoadingUi || KeyboardHost is null)
-        {
-            return;
-        }
-
-        _settings.KeyboardScale = Math.Clamp(e.NewValue, 0.72, 1.08);
-        KeyboardScaleText.Text = $"{Math.Round(_settings.KeyboardScale * 100)}%";
-        ApplyKeyboardScale();
-        await _settingsRepository.SaveAsync(_settings);
-    }
-
     private async void BackgroundSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         if (_isLoadingUi || ProfileArtworkImage is null)
@@ -1685,7 +1687,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        _settings.BackgroundOpacity = Math.Clamp(BackgroundOpacitySlider.Value, 0.15, 0.9);
+        _settings.BackgroundOpacity = Math.Clamp(BackgroundOpacitySlider.Value, 0.15, 1.0);
         _settings.BackgroundBlur = Math.Clamp(BackgroundBlurSlider.Value, 0, 24);
         BackgroundOpacityTextBox.Text = _settings.BackgroundOpacity.ToString("0.##");
         BackgroundBlurTextBox.Text = _settings.BackgroundBlur.ToString("0.##");
@@ -1942,18 +1944,6 @@ public partial class MainWindow : Window
         UpdateKeyboardVisuals();
     }
 
-    private void ApplyKeyboardScale()
-    {
-        var selectedKey = _selectedKey;
-        BuildKeyboard();
-        _selectedKey = selectedKey;
-        UpdateKeyboardVisuals();
-        if (KeyboardScaleText is not null)
-        {
-            KeyboardScaleText.Text = $"{Math.Round(Math.Clamp(_settings.KeyboardScale, 0.72, 1.08) * 100)}%";
-        }
-    }
-
     private void SetBrushResource(string key, string color)
     {
         var brush = new SolidColorBrush((WpfColor)System.Windows.Media.ColorConverter.ConvertFromString(color));
@@ -2181,7 +2171,7 @@ public partial class MainWindow : Window
             ProfileArtworkImage.Source = null;
         }
 
-        ProfileArtworkImage.Opacity = Math.Clamp(_settings.BackgroundOpacity, 0.15, 0.9);
+        ProfileArtworkImage.Opacity = Math.Clamp(_settings.BackgroundOpacity, 0.15, 1.0);
         if (ProfileArtworkImage.Effect is BlurEffect blur)
         {
             blur.Radius = Math.Clamp(_settings.BackgroundBlur, 0, 24);

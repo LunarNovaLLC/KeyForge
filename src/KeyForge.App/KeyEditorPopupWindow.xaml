@@ -1,8 +1,8 @@
 <Window x:Class="KeyForge.App.KeyEditorPopupWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Configurator"
-        Width="420"
+        Title="Binding Editor"
+        Width="620"
         SizeToContent="Height"
         WindowStyle="None"
         ResizeMode="NoResize"
@@ -16,18 +16,18 @@
             Background="{DynamicResource PanelBrush}"
             BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="1"
-            Padding="10">
+            Padding="12">
         <StackPanel>
-            <Grid Margin="0,0,0,8" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid Margin="0,0,0,10" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="32" />
                 </Grid.ColumnDefinitions>
                 <TextBlock x:Name="TitleText"
-                           Text="Configurator"
+                           Text="Binding Editor"
                            FontWeight="Black"
-                           FontSize="14"
+                           FontSize="15"
                            VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis" />
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
@@ -46,6 +46,29 @@
                         Click="CloseButton_Click"
                         ToolTip="Close" />
             </Grid>
+
+            <Border CornerRadius="6"
+                    Background="#99101520"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    Padding="10"
+                    Margin="0,0,0,10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Selected Key" Style="{StaticResource SectionLabel}" VerticalAlignment="Center" />
+                    <TextBlock x:Name="SelectedKeyText"
+                               Grid.Column="1"
+                               Text="None"
+                               FontSize="16"
+                               FontWeight="Black"
+                               Margin="14,0,0,0"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" />
+                </Grid>
+            </Border>
 
             <ComboBox x:Name="BindingModeComboBox"
                       SelectionChanged="BindingModeComboBox_SelectionChanged"
@@ -78,14 +101,7 @@
                 </Grid>
             </Button>
 
-            <TextBlock x:Name="CaptureStatusText"
-                       Text="Ready"
-                       Foreground="{DynamicResource AccentBrush}"
-                       FontSize="11"
-                       FontWeight="SemiBold"
-                       Margin="0,8,0,0" />
-
-            <StackPanel x:Name="AdvancedPanel" Visibility="Collapsed" Margin="0,12,0,0">
+            <StackPanel x:Name="AdvancedPanel" Visibility="Collapsed" Margin="0,10,0,0">
                 <Separator Background="{DynamicResource BorderBrush}" Margin="0,0,0,10" />
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -103,33 +119,181 @@
                               Unchecked="AdvancedOption_Changed" />
                 </Grid>
 
-                <TextBlock Text="Macro Steps" FontWeight="SemiBold" FontSize="13" Margin="0,10,0,4" />
-                <ListBox x:Name="MacroStepsListBox"
-                         Height="95"
-                         Background="#80101520"
-                         BorderBrush="{DynamicResource BorderBrush}"
-                         BorderThickness="1" />
-
-                <Grid Margin="0,8,0,0">
+                <Grid Margin="0,10,0,4">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.3*" />
-                        <ColumnDefinition Width="0.8*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <ComboBox x:Name="MacroActionComboBox" Grid.Column="0" Margin="0,4,5,8" />
-                    <ComboBox x:Name="MacroKeyComboBox" Grid.Column="1" Margin="5,4,5,8" DisplayMemberPath="Label" SelectedValuePath="Code" />
-                    <TextBox x:Name="MacroDelayTextBox" Grid.Column="2" Text="50" Margin="5,4,0,8" />
+                    <TextBlock Text="Macro Steps" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" />
+                    <Button x:Name="TestMacroButton"
+                            Grid.Column="1"
+                            Content="Test Macro"
+                            Click="TestMacroButton_Click"
+                            MinHeight="30"
+                            Padding="10,5"
+                            Margin="0" />
                 </Grid>
 
+                <ListBox x:Name="MacroStepsListBox"
+                         Height="220"
+                         Background="#80101520"
+                         BorderBrush="{DynamicResource BorderBrush}"
+                         BorderThickness="1"
+                         Padding="6"
+                         AllowDrop="True"
+                         PreviewMouseLeftButtonDown="MacroStepsListBox_PreviewMouseLeftButtonDown"
+                         MouseMove="MacroStepsListBox_MouseMove"
+                         Drop="MacroStepsListBox_Drop">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border CornerRadius="6"
+                                    Background="#AA111722"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    Padding="7"
+                                    Margin="0,0,0,6">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="24" />
+                                        <ColumnDefinition Width="112" />
+                                        <ColumnDefinition Width="112" />
+                                        <ColumnDefinition Width="96" />
+                                        <ColumnDefinition Width="82" />
+                                        <ColumnDefinition Width="34" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="&#xE700;"
+                                               FontFamily="Segoe MDL2 Assets"
+                                               Foreground="{DynamicResource TextMutedBrush}"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Center"
+                                               ToolTip="Drag to reorder" />
+                                    <ComboBox Grid.Column="1"
+                                              ItemsSource="{Binding MacroActions, RelativeSource={RelativeSource AncestorType=Window}}"
+                                              SelectedItem="{Binding Action, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              SelectionChanged="MacroStepControl_Changed"
+                                              Margin="4,0,4,0" />
+                                    <Grid Grid.Column="2" Margin="4,0,4,0">
+                                        <ComboBox x:Name="StepKeyComboBox"
+                                                  ItemsSource="{Binding MacroKeys, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  DisplayMemberPath="Label"
+                                                  SelectedValuePath="Code"
+                                                  SelectedValue="{Binding Key, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  SelectionChanged="MacroStepControl_Changed"
+                                                  Margin="0">
+                                            <ComboBox.Style>
+                                                <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Action}" Value="Wait">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ComboBox.Style>
+                                        </ComboBox>
+                                        <TextBlock Text="Standalone wait"
+                                                   VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource MutedText}">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Action}" Value="Wait">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+                                    <Grid Grid.Column="3" Margin="4,0,4,0">
+                                        <ComboBox x:Name="StepDelayPlacementComboBox"
+                                                  ItemsSource="{Binding DelayPlacements, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  SelectedItem="{Binding DelayPlacement, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  SelectionChanged="MacroStepControl_Changed"
+                                                  Margin="0">
+                                            <ComboBox.Style>
+                                                <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Action}" Value="Wait">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ComboBox.Style>
+                                        </ComboBox>
+                                        <TextBlock Text="Duration"
+                                                   VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource MutedText}">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Action}" Value="Wait">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+                                    <TextBox Grid.Column="4"
+                                             Text="{Binding DelayMs, Mode=OneWay, TargetNullValue=''}"
+                                             LostFocus="MacroStepDelayTextBox_LostFocus"
+                                             KeyDown="MacroStepDelayTextBox_KeyDown"
+                                             Margin="4,0,4,0"
+                                             ToolTip="Delay in milliseconds" />
+                                    <Button Grid.Column="5"
+                                            Content="&#xE711;"
+                                            FontFamily="Segoe MDL2 Assets"
+                                            FontSize="10"
+                                            Width="30"
+                                            Height="30"
+                                            Padding="0"
+                                            Margin="4,0,0,0"
+                                            Click="MacroStepRemoveButton_Click"
+                                            ToolTip="Remove step" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <TextBlock Text="Add Step" Style="{StaticResource SectionLabel}" Margin="0,10,0,2" />
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="112" />
+                        <ColumnDefinition Width="112" />
+                        <ColumnDefinition Width="96" />
+                        <ColumnDefinition Width="82" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <Button x:Name="AddStepButton" Grid.Column="0" Content="Add" Click="AddStepButton_Click" Margin="0,4,5,0" />
-                    <Button x:Name="RemoveStepButton" Grid.Column="1" Content="Remove" Click="RemoveStepButton_Click" Margin="5,4,5,0" />
-                    <Button x:Name="TestMacroButton" Grid.Column="2" Content="Test" Click="TestMacroButton_Click" Margin="5,4,0,0" />
+                    <ComboBox x:Name="MacroActionComboBox"
+                              Grid.Column="0"
+                              Margin="0,4,5,0"
+                              SelectionChanged="MacroComposerAction_Changed" />
+                    <ComboBox x:Name="MacroKeyComboBox"
+                              Grid.Column="1"
+                              Margin="5,4,5,0"
+                              DisplayMemberPath="Label"
+                              SelectedValuePath="Code" />
+                    <Grid x:Name="MacroDelayPlacementHost" Grid.Column="2" Margin="5,4,5,0">
+                        <ComboBox x:Name="MacroDelayPlacementComboBox" Margin="0" />
+                        <TextBlock x:Name="MacroWaitOnlyText"
+                                   Text="Duration"
+                                   Style="{StaticResource MutedText}"
+                                   VerticalAlignment="Center"
+                                   Visibility="Collapsed" />
+                    </Grid>
+                    <TextBox x:Name="MacroDelayTextBox"
+                             Grid.Column="3"
+                             Text="0"
+                             Margin="5,4,5,0"
+                             ToolTip="Delay in milliseconds" />
+                    <Button x:Name="AddStepButton"
+                            Grid.Column="4"
+                            Content="Add"
+                            Click="AddStepButton_Click"
+                            Margin="5,4,0,0" />
                 </Grid>
             </StackPanel>
 

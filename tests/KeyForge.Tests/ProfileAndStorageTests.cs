@@ -53,6 +53,39 @@ public sealed class ProfileAndStorageTests
     }
 
     [Fact]
+    public void MacroStepDelayBoundsApplyToTimedKeySteps()
+    {
+        var profile = new KeyForgeProfile
+        {
+            ProfileName = "Test",
+            Target = new ProfileTarget { Exe = "notepad.exe" },
+            Bindings =
+            [
+                new KeyBinding
+                {
+                    Input = "F1",
+                    Type = BindingType.Macro,
+                    Output =
+                    [
+                        new MacroStep
+                        {
+                            Action = MacroStepAction.Press,
+                            Key = "A",
+                            DelayMs = 5,
+                            DelayPlacement = MacroStepDelayPlacement.Before
+                        }
+                    ]
+                }
+            ]
+        };
+
+        var result = new ProfileValidator(new AppSettings { MacroMinimumDelayMs = 20 }).Validate(profile);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, issue => issue.Message.Contains("at least 20ms", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void ReplaceBindingKeepsOneBindingForInput()
     {
         var profile = new KeyForgeProfile();
@@ -200,13 +233,23 @@ public sealed class ProfileAndStorageTests
         {
             Input = "F1",
             Type = BindingType.Macro,
-            Output = [MacroStep.KeyDown("LeftCtrl")]
+            Output =
+            [
+                new MacroStep
+                {
+                    Action = MacroStepAction.KeyDown,
+                    Key = "LeftCtrl",
+                    DelayMs = 50,
+                    DelayPlacement = MacroStepDelayPlacement.Before
+                }
+            ]
         };
 
         var json = JsonSerializer.Serialize(binding, JsonStorageOptions.Default);
 
         Assert.Contains("\"type\": \"macro\"", json);
         Assert.Contains("\"action\": \"keyDown\"", json);
+        Assert.Contains("\"delayPlacement\": \"before\"", json);
     }
 
     [Fact]
@@ -248,7 +291,6 @@ public sealed class ProfileAndStorageTests
             CustomThemeMappedKey = "#556677",
             BackgroundOpacity = 0.44,
             BackgroundBlur = 12,
-            KeyboardScale = 0.82,
             ShowCompactDiagnostics = false,
             CreateDesktopShortcut = false,
             AutoCheckForUpdates = false,
@@ -268,7 +310,6 @@ public sealed class ProfileAndStorageTests
         Assert.Equal("#556677", roundTrip.CustomThemeMappedKey);
         Assert.Equal(0.44, roundTrip.BackgroundOpacity);
         Assert.Equal(12, roundTrip.BackgroundBlur);
-        Assert.Equal(0.82, roundTrip.KeyboardScale);
         Assert.False(roundTrip.ShowCompactDiagnostics);
         Assert.False(roundTrip.CreateDesktopShortcut);
         Assert.False(roundTrip.AutoCheckForUpdates);

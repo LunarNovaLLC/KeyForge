@@ -19,6 +19,12 @@ public sealed class MacroRunner : IMacroRunner
         {
             cancellationToken.ThrowIfCancellationRequested();
 
+            if (step.Action != MacroStepAction.Wait &&
+                step.DelayPlacement == MacroStepDelayPlacement.Before)
+            {
+                await DelayStepAsync(step, cancellationToken);
+            }
+
             switch (step.Action)
             {
                 case MacroStepAction.KeyDown:
@@ -36,8 +42,7 @@ public sealed class MacroRunner : IMacroRunner
 
                     break;
                 case MacroStepAction.Wait:
-                    await Task.Delay(Math.Max(_settings.MacroMinimumDelayMs, step.DelayMs ?? _settings.MacroMinimumDelayMs),
-                        cancellationToken);
+                    await Task.Delay(Math.Max(_settings.MacroMinimumDelayMs, step.DelayMs ?? _settings.MacroMinimumDelayMs), cancellationToken);
                     break;
                 case MacroStepAction.Press:
                 default:
@@ -48,6 +53,22 @@ public sealed class MacroRunner : IMacroRunner
 
                     break;
             }
+
+            if (step.Action != MacroStepAction.Wait &&
+                step.DelayPlacement != MacroStepDelayPlacement.Before)
+            {
+                await DelayStepAsync(step, cancellationToken);
+            }
         }
+    }
+
+    private async Task DelayStepAsync(MacroStep step, CancellationToken cancellationToken)
+    {
+        if (step.DelayMs is not > 0)
+        {
+            return;
+        }
+
+        await Task.Delay(Math.Max(_settings.MacroMinimumDelayMs, step.DelayMs.Value), cancellationToken);
     }
 }

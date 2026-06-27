@@ -26,8 +26,6 @@ public sealed class AppSettings
 
     public double BackgroundBlur { get; set; } = 2;
 
-    public double KeyboardScale { get; set; } = 0.88;
-
     public bool ShowCompactDiagnostics { get; set; } = true;
 
     public string EmergencyDisableHotkey { get; set; } = "Ctrl+Shift+F12";
@@ -60,7 +58,6 @@ public sealed class AppSettings
         CustomThemeMappedKey = CustomThemeMappedKey,
         BackgroundOpacity = BackgroundOpacity,
         BackgroundBlur = BackgroundBlur,
-        KeyboardScale = KeyboardScale,
         ShowCompactDiagnostics = ShowCompactDiagnostics,
         EmergencyDisableHotkey = EmergencyDisableHotkey,
         IgnoreInjectedInput = IgnoreInjectedInput,
