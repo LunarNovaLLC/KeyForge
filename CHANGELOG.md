@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.24
+
+- Rework Settings into a compact fixed layout with live keyboard visual controls moved into the keyboard gear panel.
+- Add Obsidian, Electric, High Contrast, and Custom themes with immediate persistence and custom color editing.
+- Remove unused settings controls and simplify Foreground Watch status text.
+
 ## 0.1.23
 
 - Add a Settings toggle that creates or removes the KeyForge desktop shortcut.

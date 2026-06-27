@@ -8,11 +8,19 @@ public sealed class AppSettings
 
     public bool CreateDesktopShortcut { get; set; } = true;
 
-    public bool ShowActiveProfileNotification { get; set; } = true;
+    public string ThemePreset { get; set; } = "Obsidian";
 
-    public ThemeMode Theme { get; set; } = ThemeMode.Dark;
+    public string CustomThemeBackground { get; set; } = "#07080D";
 
-    public string ThemePreset { get; set; } = "Obsidian Gold Red";
+    public string CustomThemePanel { get; set; } = "#141821";
+
+    public string CustomThemeAccent { get; set; } = "#F2C230";
+
+    public string CustomThemeAccentAlt { get; set; } = "#E6483E";
+
+    public string CustomThemeKeyboardKey { get; set; } = "#1B202C";
+
+    public string CustomThemeMappedKey { get; set; } = "#382019";
 
     public double BackgroundOpacity { get; set; } = 0.78;
 
@@ -34,8 +42,6 @@ public sealed class AppSettings
 
     public bool WarnWhenAntiCheatMayBeActive { get; set; } = true;
 
-    public bool DisableMacrosInOnlineGameProfiles { get; set; }
-
     public bool AutoCheckForUpdates { get; set; } = true;
 
     public DateTimeOffset? LastUpdateCheckUtc { get; set; }
@@ -45,9 +51,13 @@ public sealed class AppSettings
         StartWithWindows = StartWithWindows,
         StartMinimized = StartMinimized,
         CreateDesktopShortcut = CreateDesktopShortcut,
-        ShowActiveProfileNotification = ShowActiveProfileNotification,
-        Theme = Theme,
         ThemePreset = ThemePreset,
+        CustomThemeBackground = CustomThemeBackground,
+        CustomThemePanel = CustomThemePanel,
+        CustomThemeAccent = CustomThemeAccent,
+        CustomThemeAccentAlt = CustomThemeAccentAlt,
+        CustomThemeKeyboardKey = CustomThemeKeyboardKey,
+        CustomThemeMappedKey = CustomThemeMappedKey,
         BackgroundOpacity = BackgroundOpacity,
         BackgroundBlur = BackgroundBlur,
         KeyboardScale = KeyboardScale,
@@ -58,7 +68,6 @@ public sealed class AppSettings
         MacroMinimumDelayMs = MacroMinimumDelayMs,
         ProfileSwitchPollingIntervalMs = ProfileSwitchPollingIntervalMs,
         WarnWhenAntiCheatMayBeActive = WarnWhenAntiCheatMayBeActive,
-        DisableMacrosInOnlineGameProfiles = DisableMacrosInOnlineGameProfiles,
         AutoCheckForUpdates = AutoCheckForUpdates,
         LastUpdateCheckUtc = LastUpdateCheckUtc
     };

@@ -239,7 +239,13 @@ public sealed class ProfileAndStorageTests
     {
         var settings = new AppSettings
         {
-            ThemePreset = "Electric Blue",
+            ThemePreset = "Custom",
+            CustomThemeBackground = "#101820",
+            CustomThemePanel = "#203040",
+            CustomThemeAccent = "#AABBCC",
+            CustomThemeAccentAlt = "#CCDDEE",
+            CustomThemeKeyboardKey = "#334455",
+            CustomThemeMappedKey = "#556677",
             BackgroundOpacity = 0.44,
             BackgroundBlur = 12,
             KeyboardScale = 0.82,
@@ -253,7 +259,13 @@ public sealed class ProfileAndStorageTests
         var roundTrip = JsonSerializer.Deserialize<AppSettings>(json, JsonStorageOptions.Default);
 
         Assert.NotNull(roundTrip);
-        Assert.Equal("Electric Blue", roundTrip.ThemePreset);
+        Assert.Equal("Custom", roundTrip.ThemePreset);
+        Assert.Equal("#101820", roundTrip.CustomThemeBackground);
+        Assert.Equal("#203040", roundTrip.CustomThemePanel);
+        Assert.Equal("#AABBCC", roundTrip.CustomThemeAccent);
+        Assert.Equal("#CCDDEE", roundTrip.CustomThemeAccentAlt);
+        Assert.Equal("#334455", roundTrip.CustomThemeKeyboardKey);
+        Assert.Equal("#556677", roundTrip.CustomThemeMappedKey);
         Assert.Equal(0.44, roundTrip.BackgroundOpacity);
         Assert.Equal(12, roundTrip.BackgroundBlur);
         Assert.Equal(0.82, roundTrip.KeyboardScale);

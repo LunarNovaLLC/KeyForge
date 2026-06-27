@@ -21,7 +21,6 @@ using Microsoft.Win32;
 using Velopack;
 using Forms = System.Windows.Forms;
 using CoreKeyBinding = KeyForge.Core.Models.KeyBinding;
-using CoreThemeMode = KeyForge.Core.Models.ThemeMode;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 using WpfApplication = System.Windows.Application;
@@ -50,10 +49,10 @@ public partial class MainWindow : Window
     private KeyEditorPopupWindow? _keyEditorWindow;
     private readonly string[] _themePresets =
     [
-        "Obsidian Gold Red",
-        "Electric Blue",
-        "Violet Neon",
-        "High Contrast"
+        "Obsidian",
+        "Electric",
+        "High Contrast",
+        "Custom"
     ];
 
     private AppSettings _settings = new();
@@ -110,7 +109,7 @@ public partial class MainWindow : Window
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
         _settings = await _settingsRepository.LoadAsync();
-        if (NormalizeBackgroundDefaults())
+        if (NormalizeSettingsDefaults())
         {
             await _settingsRepository.SaveAsync(_settings);
         }
@@ -781,9 +780,8 @@ public partial class MainWindow : Window
         _settings.StartWithWindows = StartWithWindowsCheck.IsChecked == true;
         _settings.StartMinimized = StartMinimizedCheck.IsChecked == true;
         _settings.CreateDesktopShortcut = DesktopShortcutCheck.IsChecked == true;
-        _settings.ShowActiveProfileNotification = NotificationsCheck.IsChecked == true;
         _settings.AutoCheckForUpdates = AutoUpdateCheckBox.IsChecked == true;
-        _settings.ThemePreset = ThemeComboBox.SelectedItem as string ?? "Obsidian Gold Red";
+        _settings.ThemePreset = NormalizeThemePresetName(ThemeComboBox.SelectedItem as string);
         _settings.BackgroundOpacity = Math.Clamp(ParseDouble(BackgroundOpacityTextBox.Text, 0.78), 0.15, 0.9);
         _settings.BackgroundBlur = Math.Clamp(ParseDouble(BackgroundBlurTextBox.Text, 2), 0, 24);
         _settings.KeyboardScale = Math.Clamp(KeyboardScaleSlider.Value, 0.72, 1.08);
@@ -793,7 +791,6 @@ public partial class MainWindow : Window
         _settings.MacroMinimumDelayMs = Math.Clamp(ParseInt(MinDelayTextBox.Text, 20), 20, 5000);
         _settings.ProfileSwitchPollingIntervalMs = Math.Clamp(ParseInt(PollingIntervalTextBox.Text, 250), 100, 5000);
         _settings.WarnWhenAntiCheatMayBeActive = AntiCheatWarningCheck.IsChecked == true;
-        _settings.DisableMacrosInOnlineGameProfiles = DisableOnlineMacrosCheck.IsChecked == true;
 
         await _settingsRepository.SaveAsync(_settings);
         WindowsStartupService.Apply(_settings.StartWithWindows);
@@ -1060,6 +1057,8 @@ public partial class MainWindow : Window
 
         _remappingEngine.SetPaused(!_remappingEngine.IsPaused);
         UpdatePauseButtonContent();
+        UpdateActiveTargetDiagnostics(_lastActiveWindow, _activeProfiles);
+        RefreshDiagnosticsPanel();
         UpdateTrayMenu();
     }
 
@@ -1079,7 +1078,6 @@ public partial class MainWindow : Window
         ForegroundTitleText.Text = string.IsNullOrWhiteSpace(activeWindow.WindowTitle)
             ? "Window: none"
             : $"Window: {activeWindow.WindowTitle}";
-        CaptureStateText.Text = GetKeyboardCaptureState(activeWindow, activeProfiles);
         UpdateActiveTargetDiagnostics(activeWindow, activeProfiles);
         RefreshDiagnosticsPanel();
         UpdateTrayMenu();
@@ -1087,7 +1085,7 @@ public partial class MainWindow : Window
 
     private void UpdateActiveTargetDiagnostics(ActiveWindowInfo activeWindow, IReadOnlyList<KeyForgeProfile> activeProfiles)
     {
-        var foregroundSignature = $"{activeWindow.ProcessId}:{activeWindow.ExecutableName}:{activeWindow.WindowTitle}";
+        var foregroundSignature = $"{activeWindow.ProcessId}:{activeWindow.ExecutableName}:{activeWindow.WindowTitle}:{_remappingEngine?.IsPaused == true}";
         var activeProfileId = string.Join("|", activeProfiles.Select(profile => profile.ProfileId));
         if (string.Equals(_lastForegroundSignature, foregroundSignature, StringComparison.Ordinal) &&
             string.Equals(_lastActiveProfileId, activeProfileId, StringComparison.Ordinal))
@@ -1098,18 +1096,27 @@ public partial class MainWindow : Window
         _lastForegroundSignature = foregroundSignature;
         _lastActiveProfileId = activeProfileId;
 
+        if (_remappingEngine?.IsPaused == true)
+        {
+            UpdateGlobalStatus("Remapping paused");
+            MatchStateText.Text = "Paused";
+            HookStateText.Text = "Keyboard Capture: paused";
+            return;
+        }
+
         if (activeProfiles.Count == 0)
         {
-            var message = string.IsNullOrWhiteSpace(activeWindow.ExecutableName)
-                ? "No active profile"
-                : $"No active profile for {activeWindow.ExecutableName}";
+            var isKeyForgeForeground = IsKeyForgeForeground(activeWindow);
+            var message = string.IsNullOrWhiteSpace(activeWindow.ExecutableName) || isKeyForgeForeground
+                ? "Waiting for a matching app"
+                : $"No profile for {activeWindow.ExecutableName}";
             if (!IsKeyForgeForeground(activeWindow))
             {
                 UpdateGlobalStatus(message);
             }
             else
             {
-                GlobalStatusText.Text = "KeyForge is focused. Waiting for a matching app.";
+                GlobalStatusText.Text = message;
             }
 
             MatchStateText.Text = string.IsNullOrWhiteSpace(activeWindow.ExecutableName) ? "Waiting" : "Mismatch";
@@ -1123,15 +1130,15 @@ public partial class MainWindow : Window
 
         if (activeWindow.IsElevated == true && !IsCurrentProcessElevated())
         {
-            var warning = $"Active profile stack: {FormatActiveProfileStack(activeProfiles)}. {activeWindow.ExecutableName} is elevated; run KeyForge as administrator.";
+            var warning = $"Needs admin for {activeWindow.ExecutableName}";
             UpdateGlobalStatus(warning);
             MatchStateText.Text = "Needs Admin";
             HookStateText.Text = _keyboardHook?.IsRunning == true ? "Keyboard Capture: needs admin" : "Keyboard Capture: stopped";
-            AppLog.Info(warning);
+            AppLog.Info($"{warning}. Active profile stack: {FormatActiveProfileStack(activeProfiles)}.");
             return;
         }
 
-        var status = $"Active profile stack: {FormatActiveProfileStack(activeProfiles)} matched {activeWindow.ExecutableName}";
+        var status = $"{FormatActiveProfileStack(activeProfiles)} active";
         UpdateGlobalStatus(status);
         MatchStateText.Text = _remappingEngine?.IsPaused == true ? "Paused" : "Active";
         HookStateText.Text = _keyboardHook?.IsRunning == true ? "Keyboard Capture: running" : "Keyboard Capture: stopped";
@@ -1397,18 +1404,17 @@ public partial class MainWindow : Window
             StartWithWindowsCheck.IsChecked = _settings.StartWithWindows;
             StartMinimizedCheck.IsChecked = _settings.StartMinimized;
             DesktopShortcutCheck.IsChecked = _settings.CreateDesktopShortcut;
-            NotificationsCheck.IsChecked = _settings.ShowActiveProfileNotification;
             AutoUpdateCheckBox.IsChecked = _settings.AutoCheckForUpdates;
-            ThemeComboBox.SelectedItem = _settings.Theme;
-            ThemeComboBox.SelectedItem = string.IsNullOrWhiteSpace(_settings.ThemePreset)
-                ? "Obsidian Gold Red"
-                : _settings.ThemePreset;
+            _settings.ThemePreset = NormalizeThemePresetName(_settings.ThemePreset);
+            ThemeComboBox.SelectedItem = _settings.ThemePreset;
+            UpdateCustomThemeControls();
+            UpdateCustomThemeEditorVisibility();
             BackgroundOpacityTextBox.Text = _settings.BackgroundOpacity.ToString("0.##");
             BackgroundBlurTextBox.Text = _settings.BackgroundBlur.ToString("0.##");
             BackgroundOpacitySlider.Value = Math.Clamp(_settings.BackgroundOpacity, 0.15, 0.9);
             BackgroundBlurSlider.Value = Math.Clamp(_settings.BackgroundBlur, 0, 24);
             KeyboardScaleSlider.Value = Math.Clamp(_settings.KeyboardScale, 0.72, 1.08);
-            KeyboardScaleText.Text = $"Keyboard Size: {Math.Round(_settings.KeyboardScale * 100)}%";
+            KeyboardScaleText.Text = $"{Math.Round(_settings.KeyboardScale * 100)}%";
             ShowDiagnosticsCheckBox.IsChecked = _settings.ShowCompactDiagnostics;
             CompactDiagnosticsPanel.Visibility = _settings.ShowCompactDiagnostics ? Visibility.Visible : Visibility.Collapsed;
             EmergencyHotkeyTextBox.Text = _settings.EmergencyDisableHotkey;
@@ -1417,7 +1423,6 @@ public partial class MainWindow : Window
             MinDelayTextBox.Text = _settings.MacroMinimumDelayMs.ToString();
             PollingIntervalTextBox.Text = _settings.ProfileSwitchPollingIntervalMs.ToString();
             AntiCheatWarningCheck.IsChecked = _settings.WarnWhenAntiCheatMayBeActive;
-            DisableOnlineMacrosCheck.IsChecked = _settings.DisableMacrosInOnlineGameProfiles;
         }
         finally
         {
@@ -1668,7 +1673,7 @@ public partial class MainWindow : Window
         }
 
         _settings.KeyboardScale = Math.Clamp(e.NewValue, 0.72, 1.08);
-        KeyboardScaleText.Text = $"Keyboard Size: {Math.Round(_settings.KeyboardScale * 100)}%";
+        KeyboardScaleText.Text = $"{Math.Round(_settings.KeyboardScale * 100)}%";
         ApplyKeyboardScale();
         await _settingsRepository.SaveAsync(_settings);
     }
@@ -1686,6 +1691,93 @@ public partial class MainWindow : Window
         BackgroundBlurTextBox.Text = _settings.BackgroundBlur.ToString("0.##");
         UpdateProfileArtwork();
         await _settingsRepository.SaveAsync(_settings);
+    }
+
+    private async void VisualSettingCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_isLoadingUi)
+        {
+            return;
+        }
+
+        _settings.ShowCompactDiagnostics = ShowDiagnosticsCheckBox.IsChecked == true;
+        CompactDiagnosticsPanel.Visibility = _settings.ShowCompactDiagnostics ? Visibility.Visible : Visibility.Collapsed;
+        await _settingsRepository.SaveAsync(_settings);
+    }
+
+    private void KeyboardSettingsButton_Click(object sender, RoutedEventArgs e)
+    {
+        KeyboardSettingsPanel.Visibility = KeyboardSettingsPanel.Visibility == Visibility.Visible
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+    }
+
+    private void CloseKeyboardSettingsButton_Click(object sender, RoutedEventArgs e)
+    {
+        KeyboardSettingsPanel.Visibility = Visibility.Collapsed;
+    }
+
+    private async void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoadingUi)
+        {
+            return;
+        }
+
+        _settings.ThemePreset = NormalizeThemePresetName(ThemeComboBox.SelectedItem as string);
+        ApplyThemePreset(_settings.ThemePreset);
+        UpdateCustomThemeEditorVisibility();
+        UpdateCustomThemeControls();
+        await _settingsRepository.SaveAsync(_settings);
+    }
+
+    private async void CustomThemeColorButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not WpfButton { Tag: string settingKey })
+        {
+            return;
+        }
+
+        var current = GetCustomThemeColor(settingKey);
+        var currentColor = ToDrawingColor(current);
+        using var dialog = new Forms.ColorDialog
+        {
+            Color = currentColor,
+            FullOpen = true
+        };
+
+        if (dialog.ShowDialog() != Forms.DialogResult.OK)
+        {
+            return;
+        }
+
+        var value = $"#{dialog.Color.R:X2}{dialog.Color.G:X2}{dialog.Color.B:X2}";
+        SetCustomThemeColor(settingKey, value);
+        _settings.ThemePreset = "Custom";
+        ThemeComboBox.SelectedItem = "Custom";
+        UpdateCustomThemeControls();
+        ApplyThemePreset("Custom");
+        await _settingsRepository.SaveAsync(_settings);
+    }
+
+    private async void CustomThemeTextBox_LostFocus(object sender, RoutedEventArgs e)
+    {
+        if (sender is WpfTextBox textBox)
+        {
+            await ApplyCustomThemeTextBoxAsync(textBox);
+        }
+    }
+
+    private async void CustomThemeTextBox_KeyDown(object sender, WpfKeyEventArgs e)
+    {
+        if (e.Key != Key.Enter || sender is not WpfTextBox textBox)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        await ApplyCustomThemeTextBoxAsync(textBox);
+        Keyboard.ClearFocus();
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -1709,12 +1801,6 @@ public partial class MainWindow : Window
     private void SettingsRailButton_Click(object sender, RoutedEventArgs e)
     {
         ShowSettingsOverlay();
-    }
-
-    private void AppearanceRailButton_Click(object sender, RoutedEventArgs e)
-    {
-        ShowSettingsOverlay();
-        ThemeComboBox.Focus();
     }
 
     private void HelpRailButton_Click(object sender, RoutedEventArgs e)
@@ -1746,9 +1832,16 @@ public partial class MainWindow : Window
         SettingsOverlay.Visibility = Visibility.Visible;
     }
 
-    private bool NormalizeBackgroundDefaults()
+    private bool NormalizeSettingsDefaults()
     {
         var changed = false;
+        var normalizedTheme = NormalizeThemePresetName(_settings.ThemePreset);
+        if (!string.Equals(_settings.ThemePreset, normalizedTheme, StringComparison.Ordinal))
+        {
+            _settings.ThemePreset = normalizedTheme;
+            changed = true;
+        }
+
         if (Math.Abs(_settings.BackgroundOpacity - 0.58) < 0.001)
         {
             _settings.BackgroundOpacity = 0.78;
@@ -1761,25 +1854,71 @@ public partial class MainWindow : Window
             changed = true;
         }
 
+        changed |= NormalizeCustomColorSetting(
+            _settings.CustomThemeBackground,
+            "#07080D",
+            value => _settings.CustomThemeBackground = value);
+        changed |= NormalizeCustomColorSetting(
+            _settings.CustomThemePanel,
+            "#141821",
+            value => _settings.CustomThemePanel = value);
+        changed |= NormalizeCustomColorSetting(
+            _settings.CustomThemeAccent,
+            "#F2C230",
+            value => _settings.CustomThemeAccent = value);
+        changed |= NormalizeCustomColorSetting(
+            _settings.CustomThemeAccentAlt,
+            "#E6483E",
+            value => _settings.CustomThemeAccentAlt = value);
+        changed |= NormalizeCustomColorSetting(
+            _settings.CustomThemeKeyboardKey,
+            "#1B202C",
+            value => _settings.CustomThemeKeyboardKey = value);
+        changed |= NormalizeCustomColorSetting(
+            _settings.CustomThemeMappedKey,
+            "#382019",
+            value => _settings.CustomThemeMappedKey = value);
+
         return changed;
+    }
+
+    private static bool NormalizeCustomColorSetting(string current, string fallback, Action<string> apply)
+    {
+        var normalized = NormalizeHexOrDefault(current, fallback);
+        if (string.Equals(current, normalized, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        apply(normalized);
+        return true;
     }
 
     private void ApplyThemePreset(string? preset)
     {
-        var normalized = string.IsNullOrWhiteSpace(preset) ? "Obsidian Gold Red" : preset;
+        var normalized = NormalizeThemePresetName(preset);
         _settings.ThemePreset = normalized;
+        UpdateCustomThemeEditorVisibility();
 
         var palette = normalized switch
         {
-            "Electric Blue" => new ThemePalette(
+            "Electric" => new ThemePalette(
                 "#060A12", "#08101D", "#121B2A", "#17253A", "#0F1520",
                 "#4BB3FF", "#123A5C", "#1D6BFF", "#1A2434", "#1C5B88"),
-            "Violet Neon" => new ThemePalette(
-                "#090812", "#0F0B1C", "#19152A", "#231C3A", "#12101C",
-                "#B57CFF", "#3B205D", "#FF4DD8", "#211B30", "#4B2A71"),
             "High Contrast" => new ThemePalette(
                 "#000000", "#050505", "#101010", "#1C1C1C", "#080808",
                 "#FFFFFF", "#303030", "#FFEA00", "#151515", "#3A3A3A"),
+            "Custom" => new ThemePalette(
+                NormalizeHexOrDefault(_settings.CustomThemeBackground, "#07080D"),
+                DarkenColor(NormalizeHexOrDefault(_settings.CustomThemeBackground, "#07080D"), 0.12),
+                NormalizeHexOrDefault(_settings.CustomThemePanel, "#141821"),
+                LightenColor(NormalizeHexOrDefault(_settings.CustomThemePanel, "#141821"), 0.08),
+                DarkenColor(NormalizeHexOrDefault(_settings.CustomThemePanel, "#141821"), 0.07),
+                NormalizeHexOrDefault(_settings.CustomThemeAccent, "#F2C230"),
+                WithAlpha(NormalizeHexOrDefault(_settings.CustomThemeAccent, "#F2C230"), 0x44),
+                NormalizeHexOrDefault(_settings.CustomThemeAccentAlt, "#E6483E"),
+                NormalizeHexOrDefault(_settings.CustomThemeKeyboardKey, "#1B202C"),
+                NormalizeHexOrDefault(_settings.CustomThemeMappedKey, "#382019")),
             _ => new ThemePalette(
                 "#07080D", "#090A10", "#141821", "#1A2030", "#111520",
                 "#F2C230", "#3B2814", "#E6483E", "#1B202C", "#382019")
@@ -1797,9 +1936,9 @@ public partial class MainWindow : Window
         SetBrushResource("KeyboardKeyBrush", palette.Key);
         SetBrushResource("KeyboardKeyMappedBrush", palette.KeyMapped);
         SetBrushResource("KeyboardKeyMacroBrush", "#AA245B4D");
-        SetBrushResource("BorderBrush", normalized == "High Contrast" ? "#FFFFFF" : "#2A3142");
-        SetBrushResource("TextBrush", "#F4F7FB");
-        SetBrushResource("TextMutedBrush", normalized == "High Contrast" ? "#D0D0D0" : "#9BA6B8");
+        SetBrushResource("BorderBrush", normalized == "High Contrast" ? "#FFFFFF" : DeriveBorderColor(palette.Panel));
+        SetBrushResource("TextBrush", DeriveTextColor(palette.Panel));
+        SetBrushResource("TextMutedBrush", DeriveMutedTextColor(palette.Panel));
         UpdateKeyboardVisuals();
     }
 
@@ -1811,7 +1950,7 @@ public partial class MainWindow : Window
         UpdateKeyboardVisuals();
         if (KeyboardScaleText is not null)
         {
-            KeyboardScaleText.Text = $"Keyboard Size: {Math.Round(Math.Clamp(_settings.KeyboardScale, 0.72, 1.08) * 100)}%";
+            KeyboardScaleText.Text = $"{Math.Round(Math.Clamp(_settings.KeyboardScale, 0.72, 1.08) * 100)}%";
         }
     }
 
@@ -1820,6 +1959,199 @@ public partial class MainWindow : Window
         var brush = new SolidColorBrush((WpfColor)System.Windows.Media.ColorConverter.ConvertFromString(color));
         WpfApplication.Current.Resources[key] = brush;
         Resources[key] = brush;
+    }
+
+    private async Task ApplyCustomThemeTextBoxAsync(WpfTextBox textBox)
+    {
+        if (_isLoadingUi || textBox.Tag is not string settingKey)
+        {
+            return;
+        }
+
+        if (!TryNormalizeHex(textBox.Text, out var value))
+        {
+            textBox.Text = GetCustomThemeColor(settingKey);
+            UpdateGlobalStatus("Invalid color. Use #RRGGBB or #AARRGGBB.");
+            return;
+        }
+
+        SetCustomThemeColor(settingKey, value);
+        _settings.ThemePreset = "Custom";
+        ThemeComboBox.SelectedItem = "Custom";
+        UpdateCustomThemeControls();
+        ApplyThemePreset("Custom");
+        await _settingsRepository.SaveAsync(_settings);
+    }
+
+    private void UpdateCustomThemeControls()
+    {
+        SetCustomThemeControl(CustomBackgroundButton, CustomBackgroundTextBox, "CustomThemeBackground");
+        SetCustomThemeControl(CustomPanelButton, CustomPanelTextBox, "CustomThemePanel");
+        SetCustomThemeControl(CustomAccentButton, CustomAccentTextBox, "CustomThemeAccent");
+        SetCustomThemeControl(CustomAccentAltButton, CustomAccentAltTextBox, "CustomThemeAccentAlt");
+        SetCustomThemeControl(CustomKeyButton, CustomKeyTextBox, "CustomThemeKeyboardKey");
+        SetCustomThemeControl(CustomMappedKeyButton, CustomMappedKeyTextBox, "CustomThemeMappedKey");
+    }
+
+    private void SetCustomThemeControl(WpfButton button, WpfTextBox textBox, string settingKey)
+    {
+        var value = GetCustomThemeColor(settingKey);
+        textBox.Text = value;
+        button.Background = new SolidColorBrush(ToWpfColor(value));
+        button.BorderBrush = (WpfBrush)FindResource("BorderBrush");
+        button.ToolTip = value;
+    }
+
+    private void UpdateCustomThemeEditorVisibility()
+    {
+        if (CustomThemePanel is null)
+        {
+            return;
+        }
+
+        CustomThemePanel.Visibility = string.Equals(_settings.ThemePreset, "Custom", StringComparison.OrdinalIgnoreCase)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    }
+
+    private string GetCustomThemeColor(string settingKey) => settingKey switch
+    {
+        "CustomThemeBackground" => NormalizeHexOrDefault(_settings.CustomThemeBackground, "#07080D"),
+        "CustomThemePanel" => NormalizeHexOrDefault(_settings.CustomThemePanel, "#141821"),
+        "CustomThemeAccent" => NormalizeHexOrDefault(_settings.CustomThemeAccent, "#F2C230"),
+        "CustomThemeAccentAlt" => NormalizeHexOrDefault(_settings.CustomThemeAccentAlt, "#E6483E"),
+        "CustomThemeKeyboardKey" => NormalizeHexOrDefault(_settings.CustomThemeKeyboardKey, "#1B202C"),
+        "CustomThemeMappedKey" => NormalizeHexOrDefault(_settings.CustomThemeMappedKey, "#382019"),
+        _ => "#07080D"
+    };
+
+    private void SetCustomThemeColor(string settingKey, string value)
+    {
+        switch (settingKey)
+        {
+            case "CustomThemeBackground":
+                _settings.CustomThemeBackground = value;
+                break;
+            case "CustomThemePanel":
+                _settings.CustomThemePanel = value;
+                break;
+            case "CustomThemeAccent":
+                _settings.CustomThemeAccent = value;
+                break;
+            case "CustomThemeAccentAlt":
+                _settings.CustomThemeAccentAlt = value;
+                break;
+            case "CustomThemeKeyboardKey":
+                _settings.CustomThemeKeyboardKey = value;
+                break;
+            case "CustomThemeMappedKey":
+                _settings.CustomThemeMappedKey = value;
+                break;
+        }
+    }
+
+    private static string NormalizeThemePresetName(string? preset)
+    {
+        return preset?.Trim() switch
+        {
+            "Obsidian" or "Obsidian Gold Red" => "Obsidian",
+            "Electric" or "Electric Blue" => "Electric",
+            "High Contrast" => "High Contrast",
+            "Custom" => "Custom",
+            _ => "Obsidian"
+        };
+    }
+
+    private static string NormalizeHexOrDefault(string? value, string fallback)
+    {
+        return TryNormalizeHex(value, out var normalized) ? normalized : fallback;
+    }
+
+    private static bool TryNormalizeHex(string? value, out string normalized)
+    {
+        normalized = string.Empty;
+        var text = value?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return false;
+        }
+
+        if (!text.StartsWith('#'))
+        {
+            text = $"#{text}";
+        }
+
+        if (text.Length is not (7 or 9))
+        {
+            return false;
+        }
+
+        if (text.Skip(1).Any(ch => !Uri.IsHexDigit(ch)))
+        {
+            return false;
+        }
+
+        normalized = text.ToUpperInvariant();
+        return true;
+    }
+
+    private static WpfColor ToWpfColor(string color)
+    {
+        return (WpfColor)System.Windows.Media.ColorConverter.ConvertFromString(color);
+    }
+
+    private static System.Drawing.Color ToDrawingColor(string color)
+    {
+        var wpfColor = ToWpfColor(color);
+        return System.Drawing.Color.FromArgb(wpfColor.R, wpfColor.G, wpfColor.B);
+    }
+
+    private static string WithAlpha(string color, byte alpha)
+    {
+        var wpfColor = ToWpfColor(color);
+        return $"#{alpha:X2}{wpfColor.R:X2}{wpfColor.G:X2}{wpfColor.B:X2}";
+    }
+
+    private static string LightenColor(string color, double amount)
+    {
+        var wpfColor = ToWpfColor(color);
+        return ToHex(
+            (byte)Math.Clamp(wpfColor.R + (255 - wpfColor.R) * amount, 0, 255),
+            (byte)Math.Clamp(wpfColor.G + (255 - wpfColor.G) * amount, 0, 255),
+            (byte)Math.Clamp(wpfColor.B + (255 - wpfColor.B) * amount, 0, 255));
+    }
+
+    private static string DarkenColor(string color, double amount)
+    {
+        var wpfColor = ToWpfColor(color);
+        return ToHex(
+            (byte)Math.Clamp(wpfColor.R * (1 - amount), 0, 255),
+            (byte)Math.Clamp(wpfColor.G * (1 - amount), 0, 255),
+            (byte)Math.Clamp(wpfColor.B * (1 - amount), 0, 255));
+    }
+
+    private static string ToHex(byte r, byte g, byte b) => $"#{r:X2}{g:X2}{b:X2}";
+
+    private static string DeriveTextColor(string panelColor)
+    {
+        return IsDarkColor(panelColor) ? "#F4F7FB" : "#101520";
+    }
+
+    private static string DeriveMutedTextColor(string panelColor)
+    {
+        return IsDarkColor(panelColor) ? "#9BA6B8" : "#4F5A68";
+    }
+
+    private static string DeriveBorderColor(string panelColor)
+    {
+        return IsDarkColor(panelColor) ? "#2A3142" : "#9AA5B5";
+    }
+
+    private static bool IsDarkColor(string color)
+    {
+        var wpfColor = ToWpfColor(color);
+        var luminance = (0.2126 * wpfColor.R + 0.7152 * wpfColor.G + 0.0722 * wpfColor.B) / 255;
+        return luminance < 0.55;
     }
 
     private void UpdateProfileArtwork()

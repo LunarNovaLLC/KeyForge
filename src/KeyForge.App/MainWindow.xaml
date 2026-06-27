@@ -243,8 +243,12 @@
                                 </Grid>
                                 <TextBlock x:Name="ForegroundTitleText" Text="Window: none" Style="{StaticResource MutedText}" Margin="0,4,0,0" />
                                 <TextBlock x:Name="ActiveStackText" Text="Stack: none" Style="{StaticResource MutedText}" Margin="0,4,0,0" />
-                                <TextBlock x:Name="CaptureStateText" Text="Keyboard Capture: starting" Style="{StaticResource MutedText}" Margin="0,4,0,0" />
-                                <TextBlock x:Name="GlobalStatusText" Text="Loading..." Style="{StaticResource MutedText}" Margin="0,8,0,0" />
+                                <TextBlock x:Name="GlobalStatusText"
+                                           Text="Loading..."
+                                           Style="{StaticResource MutedText}"
+                                           Margin="0,8,0,0"
+                                           TextTrimming="CharacterEllipsis"
+                                           TextWrapping="NoWrap" />
                             </StackPanel>
                         </Border>
                     </Grid>
@@ -256,6 +260,95 @@
                                  VerticalAlignment="Center">
                             <StackPanel x:Name="KeyboardHost" />
                         </Viewbox>
+
+                        <Button x:Name="KeyboardSettingsButton"
+                                Content="&#xE713;"
+                                Width="38"
+                                Height="38"
+                                Padding="0"
+                                Margin="0,8,8,0"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top"
+                                FontFamily="Segoe MDL2 Assets"
+                                FontSize="16"
+                                Click="KeyboardSettingsButton_Click"
+                                ToolTip="Keyboard visual settings" />
+
+                        <Border x:Name="KeyboardSettingsPanel"
+                                Style="{StaticResource PanelCard}"
+                                Width="330"
+                                Padding="12"
+                                Margin="0,52,8,0"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top"
+                                Visibility="Collapsed">
+                            <StackPanel>
+                                <Grid>
+                                    <TextBlock Text="Keyboard Visuals" FontSize="16" FontWeight="Black" />
+                                    <Button Content="&#xE711;"
+                                            Width="28"
+                                            Height="28"
+                                            Padding="0"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Top"
+                                            FontFamily="Segoe MDL2 Assets"
+                                            FontSize="10"
+                                            Click="CloseKeyboardSettingsButton_Click"
+                                            ToolTip="Close keyboard visual settings" />
+                                </Grid>
+
+                                <Grid Margin="0,10,0,0">
+                                    <TextBlock Text="Keyboard Size" Style="{StaticResource MutedText}" />
+                                    <TextBlock x:Name="KeyboardScaleText"
+                                               Text="88%"
+                                               Style="{StaticResource MutedText}"
+                                               HorizontalAlignment="Right" />
+                                </Grid>
+                                <Slider x:Name="KeyboardScaleSlider"
+                                        Minimum="0.72"
+                                        Maximum="1.08"
+                                        TickFrequency="0.02"
+                                        ValueChanged="KeyboardScaleSlider_ValueChanged" />
+
+                                <Grid>
+                                    <TextBlock Text="Background Opacity" Style="{StaticResource MutedText}" />
+                                    <TextBox x:Name="BackgroundOpacityTextBox"
+                                             Width="68"
+                                             IsReadOnly="True"
+                                             HorizontalAlignment="Right"
+                                             Margin="0,-4,0,4" />
+                                </Grid>
+                                <Slider x:Name="BackgroundOpacitySlider"
+                                        Minimum="0.15"
+                                        Maximum="0.9"
+                                        TickFrequency="0.01"
+                                        ValueChanged="BackgroundSlider_ValueChanged" />
+
+                                <Grid>
+                                    <TextBlock Text="Background Blur" Style="{StaticResource MutedText}" />
+                                    <TextBox x:Name="BackgroundBlurTextBox"
+                                             Width="68"
+                                             IsReadOnly="True"
+                                             HorizontalAlignment="Right"
+                                             Margin="0,-4,0,4" />
+                                </Grid>
+                                <Slider x:Name="BackgroundBlurSlider"
+                                        Minimum="0"
+                                        Maximum="24"
+                                        TickFrequency="1"
+                                        ValueChanged="BackgroundSlider_ValueChanged" />
+
+                                <Button x:Name="SettingsChooseArtworkButton"
+                                        Content="Upload Selected Profile Background"
+                                        Style="{StaticResource PrimaryButton}"
+                                        Click="ChooseArtworkButton_Click"
+                                        ToolTip="Copy an image into the selected profile and use it behind the keyboard." />
+                                <CheckBox x:Name="ShowDiagnosticsCheckBox"
+                                          Content="Show compact diagnostics"
+                                          Checked="VisualSettingCheckBox_Changed"
+                                          Unchecked="VisualSettingCheckBox_Changed" />
+                            </StackPanel>
+                        </Border>
                     </Grid>
                 </Grid>
             </Grid>
@@ -264,8 +357,8 @@
                   Grid.ColumnSpan="3"
                   Visibility="Collapsed"
                   Background="#B0000000">
-                <Border Width="1080"
-                        Height="690"
+                <Border Width="1140"
+                        Height="700"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         CornerRadius="8"
@@ -303,13 +396,14 @@
 
                         <Grid Grid.Row="1" Margin="20">
                             <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
                                 <ColumnDefinition Width="1.05*" />
-                                <ColumnDefinition Width="1.05*" />
+                                <ColumnDefinition Width="1*" />
                                 <ColumnDefinition Width="1*" />
                             </Grid.ColumnDefinitions>
 
-                            <StackPanel Grid.Column="0" Margin="0,0,14,0">
-                                <Border Style="{StaticResource PanelCard}" Padding="14" Margin="0,0,0,14">
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <Border Style="{StaticResource PanelCard}" Padding="12" Margin="0,0,0,10">
                                     <StackPanel>
                                         <TextBlock Text="Updates" FontSize="18" FontWeight="Black" />
                                         <TextBlock Text="Manual release check" Style="{StaticResource SectionLabel}" Margin="0,6,0,0" />
@@ -359,85 +453,94 @@
                                     </StackPanel>
                                 </Border>
 
-                                <Border Style="{StaticResource PanelCard}" Padding="14" Margin="0,0,0,14">
-                                    <StackPanel>
-                                        <TextBlock Text="Appearance" FontSize="17" FontWeight="Black" />
-                                        <TextBlock Text="Theme Preset" Style="{StaticResource MutedText}" Margin="0,12,0,0" />
-                                        <ComboBox x:Name="ThemeComboBox" />
-
-                                        <Grid Margin="0,2,0,0">
-                                            <TextBlock Text="Keyboard Size" Style="{StaticResource MutedText}" />
-                                            <TextBlock x:Name="KeyboardScaleText"
-                                                       Text="Keyboard Size: 88%"
-                                                       Style="{StaticResource MutedText}"
-                                                       HorizontalAlignment="Right" />
-                                        </Grid>
-                                        <Slider x:Name="KeyboardScaleSlider"
-                                                Minimum="0.72"
-                                                Maximum="1.08"
-                                                TickFrequency="0.02"
-                                                ValueChanged="KeyboardScaleSlider_ValueChanged" />
-
-                                        <TextBlock Text="Background Opacity" Style="{StaticResource MutedText}" />
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="82" />
-                                            </Grid.ColumnDefinitions>
-                                            <Slider x:Name="BackgroundOpacitySlider"
-                                                    Grid.Column="0"
-                                                    Minimum="0.15"
-                                                    Maximum="0.9"
-                                                    TickFrequency="0.01"
-                                                    ValueChanged="BackgroundSlider_ValueChanged" />
-                                            <TextBox x:Name="BackgroundOpacityTextBox"
-                                                     Grid.Column="1"
-                                                     Text="0.58"
-                                                     Margin="10,0,0,10" />
-                                        </Grid>
-
-                                        <TextBlock Text="Background Blur" Style="{StaticResource MutedText}" />
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="82" />
-                                            </Grid.ColumnDefinitions>
-                                            <Slider x:Name="BackgroundBlurSlider"
-                                                    Grid.Column="0"
-                                                    Minimum="0"
-                                                    Maximum="24"
-                                                    TickFrequency="1"
-                                                    ValueChanged="BackgroundSlider_ValueChanged" />
-                                            <TextBox x:Name="BackgroundBlurTextBox"
-                                                     Grid.Column="1"
-                                                     Text="8"
-                                                     Margin="10,0,0,10" />
-                                        </Grid>
-
-                                        <Button x:Name="SettingsChooseArtworkButton"
-                                                Content="Upload Selected Profile Background"
-                                                Style="{StaticResource PrimaryButton}"
-                                                Click="ChooseArtworkButton_Click"
-                                                ToolTip="Copy an image into the selected profile and use it behind the keyboard." />
-                                        <CheckBox x:Name="ShowDiagnosticsCheckBox" Content="Show compact diagnostics on main screen" />
-                                    </StackPanel>
-                                </Border>
-
-                                <Border Style="{StaticResource PanelCard}" Padding="14">
+                                <Border Style="{StaticResource PanelCard}" Padding="12">
                                     <StackPanel>
                                         <TextBlock Text="General" FontSize="17" FontWeight="Black" />
                                         <CheckBox x:Name="StartWithWindowsCheck" Content="Start with Windows" />
                                         <CheckBox x:Name="StartMinimizedCheck" Content="Start minimized" />
                                         <CheckBox x:Name="DesktopShortcutCheck" Content="Create desktop shortcut" />
-                                        <CheckBox x:Name="NotificationsCheck" Content="Show active profile notification" />
                                         <TextBlock Text="Emergency Hotkey" Style="{StaticResource MutedText}" Margin="0,8,0,0" />
                                         <TextBox x:Name="EmergencyHotkeyTextBox" Text="Ctrl+Shift+F12" IsReadOnly="True" />
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
 
-                            <StackPanel Grid.Column="1" Margin="0,0,14,0">
-                                <Border Style="{StaticResource PanelCard}" Padding="14" Margin="0,0,0,14">
+                            <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                                <Border Style="{StaticResource PanelCard}" Padding="12">
+                                    <StackPanel>
+                                        <TextBlock Text="Appearance" FontSize="17" FontWeight="Black" />
+                                        <TextBlock Text="Theme Preset" Style="{StaticResource MutedText}" Margin="0,8,0,0" />
+                                        <ComboBox x:Name="ThemeComboBox" SelectionChanged="ThemeComboBox_SelectionChanged" />
+
+                                        <StackPanel x:Name="CustomThemePanel" Visibility="Collapsed" Margin="0,2,0,0">
+                                            <TextBlock Text="Custom Colors" Style="{StaticResource SectionLabel}" Margin="0,2,0,2" />
+                                            <Grid Margin="0,2,0,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="86" />
+                                                    <ColumnDefinition Width="34" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Background" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+                                                <Button x:Name="CustomBackgroundButton" Grid.Column="1" Tag="CustomThemeBackground" Click="CustomThemeColorButton_Click" Padding="0" Margin="0,0,8,0" />
+                                                <TextBox x:Name="CustomBackgroundTextBox" Grid.Column="2" Tag="CustomThemeBackground" LostFocus="CustomThemeTextBox_LostFocus" KeyDown="CustomThemeTextBox_KeyDown" Margin="0" />
+                                            </Grid>
+                                            <Grid Margin="0,4,0,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="86" />
+                                                    <ColumnDefinition Width="34" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Panel" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+                                                <Button x:Name="CustomPanelButton" Grid.Column="1" Tag="CustomThemePanel" Click="CustomThemeColorButton_Click" Padding="0" Margin="0,0,8,0" />
+                                                <TextBox x:Name="CustomPanelTextBox" Grid.Column="2" Tag="CustomThemePanel" LostFocus="CustomThemeTextBox_LostFocus" KeyDown="CustomThemeTextBox_KeyDown" Margin="0" />
+                                            </Grid>
+                                            <Grid Margin="0,4,0,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="86" />
+                                                    <ColumnDefinition Width="34" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Accent" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+                                                <Button x:Name="CustomAccentButton" Grid.Column="1" Tag="CustomThemeAccent" Click="CustomThemeColorButton_Click" Padding="0" Margin="0,0,8,0" />
+                                                <TextBox x:Name="CustomAccentTextBox" Grid.Column="2" Tag="CustomThemeAccent" LostFocus="CustomThemeTextBox_LostFocus" KeyDown="CustomThemeTextBox_KeyDown" Margin="0" />
+                                            </Grid>
+                                            <Grid Margin="0,4,0,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="86" />
+                                                    <ColumnDefinition Width="34" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Secondary" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+                                                <Button x:Name="CustomAccentAltButton" Grid.Column="1" Tag="CustomThemeAccentAlt" Click="CustomThemeColorButton_Click" Padding="0" Margin="0,0,8,0" />
+                                                <TextBox x:Name="CustomAccentAltTextBox" Grid.Column="2" Tag="CustomThemeAccentAlt" LostFocus="CustomThemeTextBox_LostFocus" KeyDown="CustomThemeTextBox_KeyDown" Margin="0" />
+                                            </Grid>
+                                            <Grid Margin="0,4,0,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="86" />
+                                                    <ColumnDefinition Width="34" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Key" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+                                                <Button x:Name="CustomKeyButton" Grid.Column="1" Tag="CustomThemeKeyboardKey" Click="CustomThemeColorButton_Click" Padding="0" Margin="0,0,8,0" />
+                                                <TextBox x:Name="CustomKeyTextBox" Grid.Column="2" Tag="CustomThemeKeyboardKey" LostFocus="CustomThemeTextBox_LostFocus" KeyDown="CustomThemeTextBox_KeyDown" Margin="0" />
+                                            </Grid>
+                                            <Grid Margin="0,4,0,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="86" />
+                                                    <ColumnDefinition Width="34" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Mapped" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+                                                <Button x:Name="CustomMappedKeyButton" Grid.Column="1" Tag="CustomThemeMappedKey" Click="CustomThemeColorButton_Click" Padding="0" Margin="0,0,8,0" />
+                                                <TextBox x:Name="CustomMappedKeyTextBox" Grid.Column="2" Tag="CustomThemeMappedKey" LostFocus="CustomThemeTextBox_LostFocus" KeyDown="CustomThemeTextBox_KeyDown" Margin="0" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2" Margin="0,0,10,0">
+                                <Border Style="{StaticResource PanelCard}" Padding="12" Margin="0,0,0,10">
                                     <StackPanel>
                                         <TextBlock Text="Input" FontSize="17" FontWeight="Black" />
                                         <CheckBox x:Name="IgnoreInjectedCheck" Content="Ignore injected input" />
@@ -447,7 +550,6 @@
                                         <TextBlock Text="Profile Switch Polling (ms)" Style="{StaticResource MutedText}" />
                                         <TextBox x:Name="PollingIntervalTextBox" Text="250" />
                                         <CheckBox x:Name="AntiCheatWarningCheck" Content="Warn about game rules and anti-cheat compatibility" />
-                                        <CheckBox x:Name="DisableOnlineMacrosCheck" Content="Disable macros in online game profiles" />
                                         <Button x:Name="SaveSettingsButton"
                                                 Content="Save Settings"
                                                 Style="{StaticResource PrimaryButton}"
@@ -456,22 +558,22 @@
                                     </StackPanel>
                                 </Border>
 
-                                <Border Style="{StaticResource PanelCard}" Padding="14" Margin="0,0,0,14">
+                                <Border Style="{StaticResource PanelCard}" Padding="12" Margin="0,0,0,10">
                                     <StackPanel>
                                         <TextBlock Text="Fair Play / Anti-Cheat" FontSize="17" FontWeight="Black" />
-                                        <TextBlock Text="KeyForge is a keyboard remapping tool. It does not bypass, disable, hide from, or modify anti-cheat systems."
+                                        <TextBlock Text="KeyForge only remaps keyboard input; it does not bypass, disable, hide from, or modify anti-cheat systems."
                                                    Style="{StaticResource MutedText}"
                                                    Margin="0,10,0,0" />
-                                        <TextBlock Text="Remaps and macros can still violate a game, server, tournament, or platform rule and may lead to warnings, kicks, account limits, or bans."
+                                        <TextBlock Text="Remaps or macros can still violate game, server, tournament, or platform rules and may lead to warnings, kicks, limits, or bans."
                                                    Style="{StaticResource MutedText}"
-                                                   Margin="0,8,0,0" />
-                                        <TextBlock Text="Use profiles only where allowed. You are responsible for checking each game's rules before enabling remaps or macros."
+                                                   Margin="0,6,0,0" />
+                                        <TextBlock Text="Use profiles only where allowed; you are responsible for checking each game's rules."
                                                    Style="{StaticResource MutedText}"
-                                                   Margin="0,8,0,0" />
+                                                   Margin="0,6,0,0" />
                                     </StackPanel>
                                 </Border>
 
-                                <Border Style="{StaticResource PanelCard}" Padding="14">
+                                <Border Style="{StaticResource PanelCard}" Padding="12">
                                     <StackPanel>
                                         <TextBlock Text="Profile Target" FontSize="17" FontWeight="Black" />
                                         <TextBlock x:Name="DiagnosticsProfileText"
@@ -499,8 +601,8 @@
                                 </Border>
                             </StackPanel>
 
-                            <StackPanel Grid.Column="2">
-                                <Border Style="{StaticResource PanelCard}" Padding="14" Margin="0,0,0,14">
+                            <StackPanel Grid.Column="3">
+                                <Border Style="{StaticResource PanelCard}" Padding="12" Margin="0,0,0,10">
                                     <StackPanel>
                                         <TextBlock Text="Runtime Diagnostics" FontSize="17" FontWeight="Black" />
                                         <TextBlock x:Name="DiagnosticsForegroundText"
@@ -533,11 +635,11 @@
                                     </StackPanel>
                                 </Border>
 
-                                <Border Style="{StaticResource PanelCard}" Padding="14">
+                                <Border Style="{StaticResource PanelCard}" Padding="12">
                                     <StackPanel>
                                         <TextBlock Text="Recent Status" FontSize="17" FontWeight="Black" />
                                         <ListBox x:Name="DiagnosticsLogListBox"
-                                                 Height="275"
+                                                 Height="190"
                                                  Margin="0,10,0,0"
                                                  Padding="8"
                                                  Background="#101520"
