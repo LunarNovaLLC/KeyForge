@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.23
+
+- Add a Settings toggle that creates or removes the KeyForge desktop shortcut.
+- Explicitly request Desktop and Start Menu shortcuts in Velopack packaging.
+
 ## 0.1.22
 
 - Bump the app version for update testing.

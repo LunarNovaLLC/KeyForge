@@ -428,6 +428,7 @@
                                         <TextBlock Text="General" FontSize="17" FontWeight="Black" />
                                         <CheckBox x:Name="StartWithWindowsCheck" Content="Start with Windows" />
                                         <CheckBox x:Name="StartMinimizedCheck" Content="Start minimized" />
+                                        <CheckBox x:Name="DesktopShortcutCheck" Content="Create desktop shortcut" />
                                         <CheckBox x:Name="NotificationsCheck" Content="Show active profile notification" />
                                         <TextBlock Text="Emergency Hotkey" Style="{StaticResource MutedText}" Margin="0,8,0,0" />
                                         <TextBox x:Name="EmergencyHotkeyTextBox" Text="Ctrl+Shift+F12" IsReadOnly="True" />

@@ -118,6 +118,10 @@ public partial class MainWindow : Window
         ApplyThemePreset(_settings.ThemePreset);
         _updateService = new UpdateService(_settings, _settingsRepository);
         ApplySettingsToUi();
+        if (DesktopShortcutService.ShouldAutoApply())
+        {
+            DesktopShortcutService.Apply(_settings.CreateDesktopShortcut);
+        }
 
         var profiles = await _profileRepository.LoadAllAsync();
         foreach (var profile in profiles)
@@ -776,6 +780,7 @@ public partial class MainWindow : Window
     {
         _settings.StartWithWindows = StartWithWindowsCheck.IsChecked == true;
         _settings.StartMinimized = StartMinimizedCheck.IsChecked == true;
+        _settings.CreateDesktopShortcut = DesktopShortcutCheck.IsChecked == true;
         _settings.ShowActiveProfileNotification = NotificationsCheck.IsChecked == true;
         _settings.AutoCheckForUpdates = AutoUpdateCheckBox.IsChecked == true;
         _settings.ThemePreset = ThemeComboBox.SelectedItem as string ?? "Obsidian Gold Red";
@@ -792,6 +797,7 @@ public partial class MainWindow : Window
 
         await _settingsRepository.SaveAsync(_settings);
         WindowsStartupService.Apply(_settings.StartWithWindows);
+        DesktopShortcutService.Apply(_settings.CreateDesktopShortcut);
         ApplyThemePreset(_settings.ThemePreset);
         ApplyKeyboardScale();
         UpdateProfileArtwork();
@@ -1390,6 +1396,7 @@ public partial class MainWindow : Window
         {
             StartWithWindowsCheck.IsChecked = _settings.StartWithWindows;
             StartMinimizedCheck.IsChecked = _settings.StartMinimized;
+            DesktopShortcutCheck.IsChecked = _settings.CreateDesktopShortcut;
             NotificationsCheck.IsChecked = _settings.ShowActiveProfileNotification;
             AutoUpdateCheckBox.IsChecked = _settings.AutoCheckForUpdates;
             ThemeComboBox.SelectedItem = _settings.Theme;

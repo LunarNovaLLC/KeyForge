@@ -6,6 +6,8 @@ public sealed class AppSettings
 
     public bool StartMinimized { get; set; }
 
+    public bool CreateDesktopShortcut { get; set; } = true;
+
     public bool ShowActiveProfileNotification { get; set; } = true;
 
     public ThemeMode Theme { get; set; } = ThemeMode.Dark;
@@ -42,6 +44,7 @@ public sealed class AppSettings
     {
         StartWithWindows = StartWithWindows,
         StartMinimized = StartMinimized,
+        CreateDesktopShortcut = CreateDesktopShortcut,
         ShowActiveProfileNotification = ShowActiveProfileNotification,
         Theme = Theme,
         ThemePreset = ThemePreset,

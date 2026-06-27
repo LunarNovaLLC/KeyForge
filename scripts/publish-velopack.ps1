@@ -133,6 +133,7 @@ $packArgs = @(
     "--icon", $iconPath,
     "--releaseNotes", $ReleaseNotesPath,
     "--instLocation", "PerUser",
+    "--shortcuts", "Desktop,StartMenuRoot",
     "--noPortable"
 )
 
