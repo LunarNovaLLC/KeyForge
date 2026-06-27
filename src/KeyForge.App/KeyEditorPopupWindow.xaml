@@ -108,17 +108,24 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="Macro Steps" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" />
-                    <CheckBox x:Name="RepeatWhileHeldCheckBox"
+                    <CheckBox Content="Timing details"
                               Grid.Column="1"
+                              IsChecked="{Binding ShowMacroTimingDetails, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}"
+                              Margin="0,0,12,0"
+                              VerticalAlignment="Center"
+                              ToolTip="Show Before/After delay controls for non-wait macro steps." />
+                    <CheckBox x:Name="RepeatWhileHeldCheckBox"
+                              Grid.Column="2"
                               Content="Repeat macro"
                               Margin="0,0,12,0"
                               VerticalAlignment="Center"
                               Checked="AdvancedOption_Changed"
                               Unchecked="AdvancedOption_Changed" />
                     <Button x:Name="TestMacroButton"
-                            Grid.Column="2"
+                            Grid.Column="3"
                             Content="Test Macro"
                             Click="TestMacroButton_Click"
                             MinHeight="30"
@@ -147,10 +154,10 @@
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="24" />
-                                        <ColumnDefinition Width="112" />
-                                        <ColumnDefinition Width="112" />
-                                        <ColumnDefinition Width="96" />
-                                        <ColumnDefinition Width="82" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="34" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="&#xE700;"
@@ -163,6 +170,7 @@
                                               ItemsSource="{Binding MacroActions, RelativeSource={RelativeSource AncestorType=Window}}"
                                               SelectedItem="{Binding Action, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                               SelectionChanged="MacroStepControl_Changed"
+                                              Width="104"
                                               Margin="4,0,4,0" />
                                     <Grid Grid.Column="2" Margin="4,0,4,0">
                                         <ComboBox x:Name="StepKeyComboBox"
@@ -171,6 +179,7 @@
                                                   SelectedValuePath="Code"
                                                   SelectedValue="{Binding Key, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                   SelectionChanged="MacroStepControl_Changed"
+                                                  Width="104"
                                                   Margin="0">
                                             <ComboBox.Style>
                                                 <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
@@ -202,11 +211,15 @@
                                                   ItemsSource="{Binding DelayPlacements, RelativeSource={RelativeSource AncestorType=Window}}"
                                                   SelectedItem="{Binding DelayPlacement, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                   SelectionChanged="MacroStepControl_Changed"
+                                                  Width="86"
                                                   Margin="0">
                                             <ComboBox.Style>
                                                 <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
                                                     <Setter Property="Visibility" Value="Visible" />
                                                     <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding ShowMacroTimingDetails, RelativeSource={RelativeSource AncestorType=Window}}" Value="False">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
                                                         <DataTrigger Binding="{Binding Action}" Value="Wait">
                                                             <Setter Property="Visibility" Value="Collapsed" />
                                                         </DataTrigger>
@@ -235,8 +248,38 @@
                                               HorizontalContentAlignment="Center"
                                               VerticalContentAlignment="Center"
                                               Padding="6,0"
+                                              Width="74"
                                               Margin="4,0,4,0"
-                                              ToolTip="Delay in milliseconds" />
+                                              ToolTip="Delay in milliseconds">
+                                        <TextBox.Style>
+                                            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                                <Style.Triggers>
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding ShowMacroTimingDetails, RelativeSource={RelativeSource AncestorType=Window}}" Value="False" />
+                                                            <Condition Binding="{Binding Action}" Value="Press" />
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </MultiDataTrigger>
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding ShowMacroTimingDetails, RelativeSource={RelativeSource AncestorType=Window}}" Value="False" />
+                                                            <Condition Binding="{Binding Action}" Value="KeyDown" />
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </MultiDataTrigger>
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding ShowMacroTimingDetails, RelativeSource={RelativeSource AncestorType=Window}}" Value="False" />
+                                                            <Condition Binding="{Binding Action}" Value="KeyUp" />
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </MultiDataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBox.Style>
+                                    </TextBox>
                                     <Button Grid.Column="5"
                                             Content="&#xE711;"
                                             FontFamily="Segoe MDL2 Assets"
@@ -276,8 +319,8 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="94" />
                         <ColumnDefinition Width="86" />
-                        <ColumnDefinition Width="82" />
-                        <ColumnDefinition Width="64" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <ComboBox x:Name="MacroActionComboBox"
@@ -291,7 +334,7 @@
                               Margin="4,4,4,0"
                               DisplayMemberPath="Label"
                               SelectedValuePath="Code" />
-                    <Grid x:Name="MacroDelayPlacementHost" Grid.Column="2" Margin="4,4,4,0">
+                    <Grid x:Name="MacroDelayPlacementHost" Grid.Column="2" Width="82" Margin="4,4,4,0">
                         <ComboBox x:Name="MacroDelayPlacementComboBox"
                                   Style="{StaticResource MacroComposerComboBox}" />
                         <TextBlock x:Name="MacroWaitOnlyText"
@@ -305,6 +348,7 @@
                              Grid.Column="3"
                              Style="{StaticResource MacroComposerTextBox}"
                              Text="0"
+                             Width="56"
                              Margin="4,4,4,0"
                              ToolTip="Delay in milliseconds" />
                     <Button x:Name="AddStepButton"

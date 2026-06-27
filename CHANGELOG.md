@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.27
+
+- Keep update buttons dark and themed while update checks/downloads temporarily disable controls.
+- Add a macro Timing details toggle so simple macro rows hide before/after delay controls by default.
+
 ## 0.1.26
 
 - Clean up the macro Add Step editor with compact controls, centered timing fields, and readable key labels.

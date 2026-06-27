@@ -25,6 +25,13 @@ public partial class KeyEditorPopupWindow : Window
 {
     private static readonly string[] BindingModes = ["Keybind", "Combo", "Macro", "Disabled"];
 
+    public static readonly DependencyProperty ShowMacroTimingDetailsProperty =
+        DependencyProperty.Register(
+            nameof(ShowMacroTimingDetails),
+            typeof(bool),
+            typeof(KeyEditorPopupWindow),
+            new PropertyMetadata(false, OnShowMacroTimingDetailsChanged));
+
     private readonly AppSettings _settings;
     private readonly IProfileRepository _profileRepository;
     private readonly IMacroRunner? _macroRunner;
@@ -61,6 +68,12 @@ public partial class KeyEditorPopupWindow : Window
     public IReadOnlyList<KeyOption> MacroKeys { get; }
 
     public IReadOnlyList<MacroStepDelayPlacement> DelayPlacements { get; }
+
+    public bool ShowMacroTimingDetails
+    {
+        get => (bool)GetValue(ShowMacroTimingDetailsProperty);
+        set => SetValue(ShowMacroTimingDetailsProperty, value);
+    }
 
     public event EventHandler<KeyForgeProfile>? ProfileChanged;
 
@@ -107,6 +120,9 @@ public partial class KeyEditorPopupWindow : Window
                 _macroSteps.Add(step);
             }
 
+            ShowMacroTimingDetails = _macroSteps.Any(step =>
+                step.Action != MacroStepAction.Wait &&
+                step.DelayMs is > 0);
             MacroActionComboBox.SelectedItem = MacroStepAction.Press;
             MacroKeyComboBox.SelectedValue = "A";
             MacroDelayPlacementComboBox.SelectedItem = MacroStepDelayPlacement.After;
@@ -455,15 +471,35 @@ public partial class KeyEditorPopupWindow : Window
         QueueLayoutSizeChanged();
     }
 
+    private static void OnShowMacroTimingDetailsChanged(DependencyObject source, DependencyPropertyChangedEventArgs e)
+    {
+        if (source is not KeyEditorPopupWindow window)
+        {
+            return;
+        }
+
+        window.UpdateComposerVisibility();
+        window.QueueLayoutSizeChanged();
+    }
+
     private void UpdateComposerVisibility()
     {
         var isWait = MacroActionComboBox.SelectedItem is MacroStepAction.Wait;
+        var showNonWaitTiming = !isWait && ShowMacroTimingDetails;
+
         MacroKeyComboBox.Visibility = isWait ? Visibility.Collapsed : Visibility.Visible;
-        MacroDelayPlacementComboBox.Visibility = isWait ? Visibility.Collapsed : Visibility.Visible;
+        MacroDelayPlacementHost.Visibility = isWait || showNonWaitTiming ? Visibility.Visible : Visibility.Collapsed;
+        MacroDelayPlacementComboBox.Visibility = showNonWaitTiming ? Visibility.Visible : Visibility.Collapsed;
         MacroWaitOnlyText.Visibility = isWait ? Visibility.Visible : Visibility.Collapsed;
+        MacroDelayTextBox.Visibility = isWait || showNonWaitTiming ? Visibility.Visible : Visibility.Collapsed;
         if (isWait && ParseInt(MacroDelayTextBox.Text, 0) <= 0)
         {
             MacroDelayTextBox.Text = Math.Max(_settings.MacroMinimumDelayMs, 50).ToString();
+        }
+        else if (!isWait && !ShowMacroTimingDetails)
+        {
+            MacroDelayTextBox.Text = "0";
+            MacroDelayPlacementComboBox.SelectedItem = MacroStepDelayPlacement.After;
         }
         else if (!isWait && string.IsNullOrWhiteSpace(MacroDelayTextBox.Text))
         {
@@ -522,10 +558,19 @@ public partial class KeyEditorPopupWindow : Window
             MacroStepAction.KeyUp => MacroStep.KeyUp(key),
             _ => MacroStep.Press(key)
         };
-        step.DelayPlacement = MacroDelayPlacementComboBox.SelectedItem is MacroStepDelayPlacement placement
-            ? placement
-            : MacroStepDelayPlacement.After;
-        step.DelayMs = ParseOptionalDelay(MacroDelayTextBox.Text);
+        if (ShowMacroTimingDetails)
+        {
+            step.DelayPlacement = MacroDelayPlacementComboBox.SelectedItem is MacroStepDelayPlacement placement
+                ? placement
+                : MacroStepDelayPlacement.After;
+            step.DelayMs = ParseOptionalDelay(MacroDelayTextBox.Text);
+        }
+        else
+        {
+            step.DelayPlacement = MacroStepDelayPlacement.After;
+            step.DelayMs = null;
+        }
+
         NormalizeStepForEditor(step);
         return step;
     }
