@@ -23,6 +23,7 @@ $root = Resolve-Path (Join-Path $PSScriptRoot "..")
 $propsPath = Join-Path $root "Directory.Build.props"
 $publishDir = Join-Path $root "artifacts\publish\KeyForge"
 $releaseDir = Join-Path $root "artifacts\velopack"
+$singleInstallerDir = Join-Path $root "artifacts\installer"
 $defaultReleaseNotesPath = Join-Path $root "artifacts\release-notes.md"
 $appProject = Join-Path $root "src\KeyForge.App\KeyForge.App.csproj"
 $iconPath = Join-Path $root "Icon\KFIcon.ico"
@@ -61,8 +62,13 @@ if (Test-Path $releaseDir) {
     Remove-Item -LiteralPath $releaseDir -Recurse -Force
 }
 
+if (Test-Path $singleInstallerDir) {
+    Remove-Item -LiteralPath $singleInstallerDir -Recurse -Force
+}
+
 New-Item -ItemType Directory -Force -Path $publishDir | Out-Null
 New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
+New-Item -ItemType Directory -Force -Path $singleInstallerDir | Out-Null
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $ReleaseNotesPath) | Out-Null
 
 if (-not (Test-Path $ReleaseNotesPath)) {
@@ -153,4 +159,12 @@ if (Test-Path $channelSetupPath) {
     Move-Item -LiteralPath $channelSetupPath -Destination $publicSetupPath -Force
 }
 
+if (-not (Test-Path $publicSetupPath)) {
+    throw "Expected installer was not produced: $publicSetupPath"
+}
+
+$singleInstallerPath = Join-Path $singleInstallerDir "KeyForge-Setup.exe"
+Copy-Item -LiteralPath $publicSetupPath -Destination $singleInstallerPath -Force
+
 Write-Host "Velopack artifacts written to $releaseDir"
+Write-Host "Single-file installer ready at $singleInstallerPath"

@@ -27,7 +27,19 @@ The tests cover profile validation, JSON round-tripping, active profile matching
 
 The official distribution path publishes a self-contained `win-x64` app and builds Velopack setup/update artifacts in `artifacts\velopack`. Public releases should be created from tags named `vX.Y.Z` where `X.Y.Z` matches `Directory.Build.props`.
 
+For manual distribution or smoke testing on another Windows x64 PC, send the single installer copied to:
+
+```powershell
+artifacts\installer\KeyForge-Setup.exe
+```
+
 For a production release, push the matching tag to GitHub. The GitHub Actions workflow builds, tests, packages Velopack artifacts, and uploads them to the GitHub Release.
+
+## Fair Play / Anti-Cheat
+
+KeyForge is a keyboard remapping tool. It does not bypass, disable, hide from, or modify anti-cheat systems.
+
+Remaps and macros can still violate a game, server, tournament, or platform rule and may lead to warnings, kicks, account limits, or bans. Check each game's rules before enabling profiles or macros.
 
 ## Automatic Updates
 

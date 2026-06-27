@@ -1274,7 +1274,7 @@ public partial class MainWindow : Window
 
         if (_editingBinding?.Type == BindingType.Macro && _settings.WarnWhenAntiCheatMayBeActive)
         {
-            messages.Add("Some games prohibit macros, especially online competitive games.");
+            messages.Add("Some games, servers, tournaments, and platforms prohibit macros. Misuse can lead to account limits or bans.");
         }
 
         WarningTextBlock.Text = string.Join(Environment.NewLine, messages);
@@ -1719,7 +1719,10 @@ public partial class MainWindow : Window
             "Import / Export:\n" +
             "- Export saves the selected profile as a portable KeyForge JSON file.\n" +
             "- Import loads a KeyForge profile JSON into your profile list.\n" +
-            "- Backgrounds and icons are stored as file paths, so send those assets too if another PC needs the same artwork.",
+            "- Backgrounds and icons are stored as file paths, so send those assets too if another PC needs the same artwork.\n\n" +
+            "Fair Play / Anti-Cheat:\n" +
+            "- KeyForge does not bypass, disable, hide from, or modify anti-cheat systems.\n" +
+            "- Remaps and macros can still violate game or platform rules. Check each game's rules before use.",
             "KeyForge Help",
             MessageBoxButton.OK,
             MessageBoxImage.Information);

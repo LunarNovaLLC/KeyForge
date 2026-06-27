@@ -109,7 +109,7 @@ public sealed class ProfileValidator
             }
 
             result.Add(ValidationSeverity.Warning,
-                "Some online or competitive games prohibit macros. Check the game's rules before using this profile.",
+                "Some games, servers, tournaments, and platforms prohibit macros. Misuse can lead to warnings, kicks, account limits, or bans. Check the game's rules before using this profile.",
                 "bindings.output");
         }
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.22
+
+- Bump the app version for update testing.
+
 ## 0.1.21
 
 - Keep release feed metadata limited to the current build notes.
