@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.26
+
+- Clean up the macro Add Step editor with compact controls, centered timing fields, and readable key labels.
+- Remove the unused Advanced toggle from the binding editor and make options appear by binding mode.
+- Fix Fair Play settings text clipping and regenerate transparent app/shortcut icon assets.
+
 ## 0.1.25
 
 - Rework Settings into a cleaner three-column card layout and remove the keyboard size setting.

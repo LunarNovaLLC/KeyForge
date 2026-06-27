@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
-    <KeyForgeVersion>0.1.25</KeyForgeVersion>
-    <KeyForgeFileVersion>0.1.25.0</KeyForgeFileVersion>
+    <KeyForgeVersion>0.1.26</KeyForgeVersion>
+    <KeyForgeFileVersion>0.1.26.0</KeyForgeFileVersion>
     <Version>$(KeyForgeVersion)</Version>
     <AssemblyVersion>$(KeyForgeFileVersion)</AssemblyVersion>
     <FileVersion>$(KeyForgeFileVersion)</FileVersion>

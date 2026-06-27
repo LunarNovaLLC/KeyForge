@@ -8,6 +8,7 @@
         ResizeMode="NoResize"
         ShowInTaskbar="False"
         Topmost="True"
+        AllowsTransparency="True"
         Background="Transparent"
         Foreground="{DynamicResource TextBrush}"
         FontFamily="Segoe UI Variable, Segoe UI"
@@ -21,7 +22,6 @@
             <Grid Margin="0,0,0,10" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="32" />
                 </Grid.ColumnDefinitions>
                 <TextBlock x:Name="TitleText"
@@ -30,14 +30,7 @@
                            FontSize="15"
                            VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis" />
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Advanced" FontSize="10" FontWeight="SemiBold" Margin="0,0,6,0" VerticalAlignment="Center" />
-                    <CheckBox x:Name="AdvancedCheckBox"
-                              VerticalAlignment="Center"
-                              Checked="AdvancedCheckBox_Changed"
-                              Unchecked="AdvancedCheckBox_Changed" />
-                </StackPanel>
-                <Button Grid.Column="2"
+                <Button Grid.Column="1"
                         Content="&#xE8BB;"
                         Style="{StaticResource TitleBarButton}"
                         Width="28"
@@ -101,32 +94,31 @@
                 </Grid>
             </Button>
 
-            <StackPanel x:Name="AdvancedPanel" Visibility="Collapsed" Margin="0,10,0,0">
+            <StackPanel x:Name="BindingOptionsPanel" Visibility="Collapsed" Margin="0,8,0,0">
                 <Separator Background="{DynamicResource BorderBrush}" Margin="0,0,0,10" />
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <CheckBox x:Name="BlockOriginalCheckBox"
-                              Content="Block original"
-                              Checked="AdvancedOption_Changed"
-                              Unchecked="AdvancedOption_Changed" />
-                    <CheckBox x:Name="RepeatWhileHeldCheckBox"
-                              Grid.Column="1"
-                              Content="Repeat macro"
-                              Checked="AdvancedOption_Changed"
-                              Unchecked="AdvancedOption_Changed" />
-                </Grid>
+                <CheckBox x:Name="BlockOriginalCheckBox"
+                          Content="Block original"
+                          Checked="AdvancedOption_Changed"
+                          Unchecked="AdvancedOption_Changed" />
+            </StackPanel>
 
-                <Grid Margin="0,10,0,4">
+            <StackPanel x:Name="MacroPanel" Visibility="Collapsed" Margin="0,10,0,0">
+                <Grid Margin="0,0,0,4">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="Macro Steps" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" />
+                    <CheckBox x:Name="RepeatWhileHeldCheckBox"
+                              Grid.Column="1"
+                              Content="Repeat macro"
+                              Margin="0,0,12,0"
+                              VerticalAlignment="Center"
+                              Checked="AdvancedOption_Changed"
+                              Unchecked="AdvancedOption_Changed" />
                     <Button x:Name="TestMacroButton"
-                            Grid.Column="1"
+                            Grid.Column="2"
                             Content="Test Macro"
                             Click="TestMacroButton_Click"
                             MinHeight="30"
@@ -236,12 +228,15 @@
                                             </TextBlock.Style>
                                         </TextBlock>
                                     </Grid>
-                                    <TextBox Grid.Column="4"
-                                             Text="{Binding DelayMs, Mode=OneWay, TargetNullValue=''}"
-                                             LostFocus="MacroStepDelayTextBox_LostFocus"
-                                             KeyDown="MacroStepDelayTextBox_KeyDown"
-                                             Margin="4,0,4,0"
-                                             ToolTip="Delay in milliseconds" />
+                                     <TextBox Grid.Column="4"
+                                              Text="{Binding DelayMs, Mode=OneWay, TargetNullValue=''}"
+                                              LostFocus="MacroStepDelayTextBox_LostFocus"
+                                              KeyDown="MacroStepDelayTextBox_KeyDown"
+                                              HorizontalContentAlignment="Center"
+                                              VerticalContentAlignment="Center"
+                                              Padding="6,0"
+                                              Margin="4,0,4,0"
+                                              ToolTip="Delay in milliseconds" />
                                     <Button Grid.Column="5"
                                             Content="&#xE711;"
                                             FontFamily="Segoe MDL2 Assets"
@@ -260,40 +255,66 @@
 
                 <TextBlock Text="Add Step" Style="{StaticResource SectionLabel}" Margin="0,10,0,2" />
                 <Grid>
+                    <Grid.Resources>
+                        <Style x:Key="MacroComposerComboBox" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                            <Setter Property="MinHeight" Value="30" />
+                            <Setter Property="Margin" Value="0" />
+                        </Style>
+                        <Style x:Key="MacroComposerTextBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                            <Setter Property="MinHeight" Value="30" />
+                            <Setter Property="Padding" Value="6,0" />
+                            <Setter Property="Margin" Value="0" />
+                            <Setter Property="HorizontalContentAlignment" Value="Center" />
+                            <Setter Property="VerticalContentAlignment" Value="Center" />
+                        </Style>
+                        <Style x:Key="MacroComposerButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                            <Setter Property="MinHeight" Value="30" />
+                            <Setter Property="Padding" Value="10,4" />
+                            <Setter Property="Margin" Value="0" />
+                        </Style>
+                    </Grid.Resources>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="112" />
-                        <ColumnDefinition Width="112" />
-                        <ColumnDefinition Width="96" />
+                        <ColumnDefinition Width="94" />
+                        <ColumnDefinition Width="86" />
                         <ColumnDefinition Width="82" />
+                        <ColumnDefinition Width="64" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <ComboBox x:Name="MacroActionComboBox"
                               Grid.Column="0"
-                              Margin="0,4,5,0"
+                              Style="{StaticResource MacroComposerComboBox}"
+                              Margin="0,4,4,0"
                               SelectionChanged="MacroComposerAction_Changed" />
                     <ComboBox x:Name="MacroKeyComboBox"
                               Grid.Column="1"
-                              Margin="5,4,5,0"
+                              Style="{StaticResource MacroComposerComboBox}"
+                              Margin="4,4,4,0"
                               DisplayMemberPath="Label"
                               SelectedValuePath="Code" />
-                    <Grid x:Name="MacroDelayPlacementHost" Grid.Column="2" Margin="5,4,5,0">
-                        <ComboBox x:Name="MacroDelayPlacementComboBox" Margin="0" />
+                    <Grid x:Name="MacroDelayPlacementHost" Grid.Column="2" Margin="4,4,4,0">
+                        <ComboBox x:Name="MacroDelayPlacementComboBox"
+                                  Style="{StaticResource MacroComposerComboBox}" />
                         <TextBlock x:Name="MacroWaitOnlyText"
                                    Text="Duration"
                                    Style="{StaticResource MutedText}"
                                    VerticalAlignment="Center"
+                                   TextAlignment="Center"
                                    Visibility="Collapsed" />
                     </Grid>
                     <TextBox x:Name="MacroDelayTextBox"
                              Grid.Column="3"
+                             Style="{StaticResource MacroComposerTextBox}"
                              Text="0"
-                             Margin="5,4,5,0"
+                             Margin="4,4,4,0"
                              ToolTip="Delay in milliseconds" />
                     <Button x:Name="AddStepButton"
                             Grid.Column="4"
+                            Style="{StaticResource MacroComposerButton}"
                             Content="Add"
                             Click="AddStepButton_Click"
-                            Margin="5,4,0,0" />
+                            Width="62"
+                            HorizontalAlignment="Left"
+                            Margin="4,4,0,0" />
                 </Grid>
             </StackPanel>
 

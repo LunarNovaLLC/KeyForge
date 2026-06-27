@@ -112,7 +112,7 @@ public partial class KeyEditorPopupWindow : Window
             MacroDelayPlacementComboBox.SelectedItem = MacroStepDelayPlacement.After;
             MacroDelayTextBox.Text = "0";
             UpdateComposerVisibility();
-            UpdateAdvancedVisibility();
+            UpdateModeSections();
             UpdateWarning();
         }
         finally
@@ -139,7 +139,7 @@ public partial class KeyEditorPopupWindow : Window
             _editingBinding.Output = _macroSteps.Select(step => step.Clone()).ToList();
         }
 
-        UpdateAdvancedVisibility();
+        UpdateModeSections();
         UpdatePreview();
         if (_editingBinding.Type == BindingType.Disabled)
         {
@@ -430,8 +430,6 @@ public partial class KeyEditorPopupWindow : Window
         LoadSelectedBinding();
     }
 
-    private void AdvancedCheckBox_Changed(object sender, RoutedEventArgs e) => UpdateAdvancedVisibility();
-
     private async void AdvancedOption_Changed(object sender, RoutedEventArgs e)
     {
         if (_isLoadingUi || _editingBinding is null)
@@ -445,12 +443,15 @@ public partial class KeyEditorPopupWindow : Window
         await SaveCurrentBindingAsync(reloadAfterSave: false);
     }
 
-    private void UpdateAdvancedVisibility()
+    private void UpdateModeSections()
     {
-        var isAdvanced = AdvancedCheckBox.IsChecked == true ||
-                         string.Equals(BindingModeComboBox.SelectedItem as string, "Macro", StringComparison.OrdinalIgnoreCase);
-        AdvancedPanel.Visibility = isAdvanced ? Visibility.Visible : Visibility.Collapsed;
-        RepeatWhileHeldCheckBox.IsEnabled = string.Equals(BindingModeComboBox.SelectedItem as string, "Macro", StringComparison.OrdinalIgnoreCase);
+        var mode = TypeFromMode(BindingModeComboBox.SelectedItem as string);
+        var isDisabled = mode == BindingType.Disabled;
+        var isMacro = mode == BindingType.Macro;
+
+        BindingOptionsPanel.Visibility = isDisabled ? Visibility.Collapsed : Visibility.Visible;
+        MacroPanel.Visibility = isMacro ? Visibility.Visible : Visibility.Collapsed;
+        RepeatWhileHeldCheckBox.IsEnabled = isMacro;
         QueueLayoutSizeChanged();
     }
 
@@ -767,7 +768,10 @@ public partial class KeyEditorPopupWindow : Window
         };
     }
 
-    public sealed record KeyOption(string Code, string Label);
+    public sealed record KeyOption(string Code, string Label)
+    {
+        public override string ToString() => Label;
+    }
 
     private enum CaptureMode
     {
